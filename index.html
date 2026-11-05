@@ -236,8 +236,8 @@ input[type=range]{width:100%;accent-color:var(--accent);height:32px}
       </div>
       <div class="panel">
         <span class="label">3 · Foto</span>
-        <label class="btn primary filebtn full">Escolher foto da influencer<input type="file" id="gFoto" accept="image/*"></label>
-        <p class="small muted" id="gFotoInfo">Nenhuma foto escolhida. A foto vai para todos os stories com fundo de foto.</p>
+        <label class="btn primary filebtn full">Escolher foto(s) da influencer<input type="file" id="gFoto" accept="image/*" multiple></label>
+        <p class="small muted" id="gFotoInfo">Escolha 1 foto para todos os stories ou várias (uma por story, na ordem).</p>
       </div>
     </div>
     <div class="row" style="justify-content:space-between">
@@ -626,7 +626,8 @@ $('#addLink').onclick = () => {
 $('#inLayerImg').onchange = async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
   const id = await saveImageFile(f), i = loaded.get(id);
-  const w = Math.min(800, i.naturalWidth), h = w * i.naturalHeight / i.naturalWidth;
+  const ar = i.naturalWidth / i.naturalHeight, full = Math.abs(ar - 9 / 16) < 0.04; // print de story inteiro ocupa a tela toda
+  const w = full ? W : Math.min(800, i.naturalWidth), h = full ? H : w * i.naturalHeight / i.naturalWidth;
   pushUndo(true); const l = { id: uid(), type: 'image', imageId: id, x: 540, y: 960, w, h, rot: 0, opacity: 1 };
   curStory().layers.push(l); E.sel = l.id; changed(); renderPanel(); renderLayers();
 };
@@ -773,9 +774,22 @@ function renderPanel() {
   } else if (l.type === 'image') {
     p.innerHTML = `<span class="label">Imagem</span>
       <label class="btn sm filebtn">Trocar imagem<input type="file" id="pImg" accept="image/*"></label>
+      <div class="field"><span>Remover fundo liso (ex.: fundo preto de um print)</span>
+        <input type="range" id="pTol" min="5" max="90" step="1" value="${l.bgTol || 30}" aria-label="Intensidade">
+        <div class="grid2"><button class="btn sm" id="pRmBg">${l.srcImageId ? 'Aplicar de novo' : 'Remover fundo'}</button>
+        <button class="btn sm" id="pRestore" ${l.srcImageId ? '' : 'disabled'}>Voltar original</button></div>
+        <span class="small muted">Apaga a cor das bordas e o que encosta nela. Arraste para a direita para apagar mais.</span></div>
       <label class="field"><span>Opacidade</span><input type="range" id="pOp" min="0.1" max="1" step="0.05" value="${l.opacity ?? 1}"></label>${common}${acts}`;
     $('#pImg').onchange = async e => { const f = e.target.files[0]; if (!f) return; pushUndo(true); const id = await saveImageFile(f), i = loaded.get(id);
-      l.imageId = id; l.h = l.w * i.naturalHeight / i.naturalWidth; changed(); };
+      l.imageId = id; delete l.srcImageId; l.h = l.w * i.naturalHeight / i.naturalWidth; changed(); renderPanel(); };
+    $('#pTol').oninput = e => { l.bgTol = +e.target.value; };
+    $('#pRmBg').onclick = async () => {
+      $('#busy').hidden = false;
+      try { const src = l.srcImageId || l.imageId, id = await removeBorderBg(src, l.bgTol || 30);
+        if (id) { pushUndo(true); l.srcImageId = src; l.imageId = id; changed(); renderPanel(); toast('Fundo removido'); } }
+      finally { $('#busy').hidden = true; }
+    };
+    $('#pRestore').onclick = () => { pushUndo(true); l.imageId = l.srcImageId; delete l.srcImageId; changed(); renderPanel(); };
     bind('pOp', t => l.opacity = +t.value);
   } else {
     const fopts = FONTS.map(([f, n]) => `<option value="${f}" ${l.font === f ? 'selected' : ''}>${n}</option>`).join('');
@@ -831,7 +845,7 @@ async function renderGerar() {
   if (!list.some(t => t.id === G.tplId)) G.tplId = list[0].id;
   sel.innerHTML = list.map(t => `<option value="${t.id}" ${t.id === G.tplId ? 'selected' : ''}>${esc(t.name)} (${t.stories.length} stories)</option>`).join('');
   $('#gNome').value = G.nome; $('#gLink').value = G.link;
-  $('#gFotoInfo').textContent = G.photoId ? 'Foto escolhida. Toque de novo para trocar.' : 'Nenhuma foto escolhida. A foto vai para todos os stories com fundo de foto.';
+  $('#gFotoInfo').textContent = G.photoId ? 'Foto escolhida. Toque de novo para trocar.' : 'Escolha 1 foto para todos os stories ou várias (uma por story, na ordem).';
   G.tpl = list.find(t => t.id === G.tplId);
   renderPreviews(); renderOuts();
 }
@@ -872,10 +886,41 @@ $('#gNome').oninput = e => { G.nome = e.target.value; stale(); redrawPreviews();
 $('#gLink').oninput = e => { G.link = e.target.value.trim(); stale(); redrawPreviews(); };
 $('#gGuide').onchange = redrawPreviews;
 $('#gFoto').onchange = async e => {
-  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-  G.photoId = await saveImageFile(f); Object.values(G.adj).forEach(a => { a.ox = a.oy = 0; a.zoom = 1; }); stale();
-  $('#gFotoInfo').textContent = 'Foto aplicada em todos os stories. Ajuste cada um abaixo.'; renderPreviews();
+  const files = [...e.target.files]; e.target.value = ''; if (!files.length) return;
+  $('#busy').hidden = false;
+  try {
+    const ids = []; for (const f of files) ids.push(await saveImageFile(f));
+    const fotoStories = G.tpl.stories.filter(s => s.mode !== 'pronta');
+    G.photoId = ids[0];
+    fotoStories.forEach((s, i) => { const a = adjFor(s); a.ox = a.oy = 0; a.zoom = 1; a.photoId = ids.length > 1 ? ids[i % ids.length] : null; });
+    stale();
+    $('#gFotoInfo').textContent = ids.length > 1
+      ? `${ids.length} fotos: a 1ª vai no 1º story com foto, a 2ª no 2º, e assim por diante. Use "Outra foto" para trocar uma.`
+      : 'Foto aplicada em todos os stories. Ajuste cada um abaixo.';
+    renderPreviews();
+  } finally { $('#busy').hidden = true; }
 };
+
+/* remove o fundo liso (ex.: preto) que encosta nas bordas da imagem, mantendo o que está dentro dos balões */
+async function removeBorderBg(srcId, tol) {
+  const i = await loadImg(srcId); if (!i) return null;
+  const c = document.createElement('canvas'); c.width = i.naturalWidth; c.height = i.naturalHeight;
+  const x = c.getContext('2d'); x.drawImage(i, 0, 0);
+  const d = x.getImageData(0, 0, c.width, c.height), px = d.data, w = c.width, h = c.height;
+  const r0 = px[0], g0 = px[1], b0 = px[2];
+  const near = p => Math.max(Math.abs(px[p] - r0), Math.abs(px[p + 1] - g0), Math.abs(px[p + 2] - b0)) <= tol;
+  const seen = new Uint8Array(w * h), stack = [];
+  const push = (xx, yy) => { const k = yy * w + xx; if (!seen[k] && near(k * 4)) { seen[k] = 1; stack.push(k); } };
+  for (let xx = 0; xx < w; xx++) { push(xx, 0); push(xx, h - 1); }
+  for (let yy = 0; yy < h; yy++) { push(0, yy); push(w - 1, yy); }
+  while (stack.length) {
+    const k = stack.pop(), xx = k % w, yy = (k - xx) / w; px[k * 4 + 3] = 0;
+    if (xx > 0) push(xx - 1, yy); if (xx < w - 1) push(xx + 1, yy); if (yy > 0) push(xx, yy - 1); if (yy < h - 1) push(xx, yy + 1);
+  }
+  x.putImageData(d, 0, 0);
+  const blob = await new Promise(r => c.toBlob(r, 'image/png')); c.width = c.height = 1;
+  const id = uid(); await DB.put('images', { id, blob }); loaded.set(id, await blobToImage(blob)); return id;
+}
 
 async function generateFiles(tpl, opts) {
   const v = { nome: opts.nome || '', link: opts.link || '' }, out = [], base = slug(opts.nome);
