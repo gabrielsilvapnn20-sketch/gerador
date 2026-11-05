@@ -1,0 +1,1017 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Stories">
+<title>Gerador de Stories</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700;800&family=Montserrat:wght@400;700;800&family=Poppins:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Playfair+Display:wght@400;700&family=Bebas+Neue&family=Pacifico&display=swap">
+<script src="jszip.min.js"></script>
+<style>
+/* Layout: app de trabalho — barra fixa com abas; editor em 3 colunas no computador, empilhado no celular */
+:root{
+  --bg:#f6f1f3; --surface:#ffffff; --surface-2:#efe5ea; --fg:#24131b; --muted:#76606b;
+  --line:#e0d1d8; --accent:#8a1a45; --accent-fg:#ffffff; --accent-soft:#f5dbe5;
+  --danger:#b42318; --ok:#17734a;
+  --f-display:"Bricolage Grotesque", "Figtree", system-ui, sans-serif;
+  --f-body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r:14px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#150b10; --surface:#20131a; --surface-2:#2b1a22; --fg:#f6ecf0; --muted:#b59ba7;
+  --line:#3b2630; --accent:#e46a9c; --accent-fg:#1a0a10; --accent-soft:#3e1a29;
+  --danger:#ff7a6b; --ok:#5ed39a; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#150b10; --surface:#20131a; --surface-2:#2b1a22; --fg:#f6ecf0; --muted:#b59ba7;
+  --line:#3b2630; --accent:#e46a9c; --accent-fg:#1a0a10; --accent-soft:#3e1a29;
+  --danger:#ff7a6b; --ok:#5ed39a; color-scheme:dark }
+
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:16px/1.45 var(--f-body);-webkit-text-size-adjust:100%;
+  padding-bottom:env(safe-area-inset-bottom,0px)}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:1.5rem} h3{font-size:1.1rem}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:.875rem}
+.label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+
+/* topo */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--surface);z-index:30}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:12px;min-height:60px;flex-wrap:wrap;padding-block:6px}
+.brand{font-family:var(--f-display);font-weight:800;font-size:1.15rem;margin-right:auto;display:flex;align-items:center;gap:8px}
+.brand i{display:inline-block;width:14px;height:24px;border-radius:4px;background:var(--accent)}
+.tabs{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:999px}
+.tabs button{border:0;background:transparent;color:var(--fg);font:600 15px var(--f-body);padding:10px 16px;border-radius:999px;cursor:pointer;min-height:42px}
+.tabs button[aria-current="true"]{background:var(--accent);color:var(--accent-fg)}
+
+main{padding-block:20px 60px}
+.view{display:flex;flex-direction:column;gap:18px}
+
+/* botões e campos */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 18px;border-radius:12px;
+  border:1px solid var(--line);background:var(--surface);color:var(--fg);font:600 16px var(--f-body);cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.btn.danger{color:var(--danger)}
+.btn.danger.solid{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn.sm{min-height:40px;padding:0 12px;font-size:14px;border-radius:10px}
+.btn.on{background:var(--accent-soft);border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.full{width:100%}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field>span{font-size:.85rem;font-weight:600;color:var(--muted)}
+input[type=text],input[type=url],input[type=number],select,textarea{width:100%;font:16px var(--f-body);color:var(--fg);background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;padding:11px 12px;min-height:46px}
+textarea{min-height:90px;resize:vertical}
+input[type=color]{width:52px;height:46px;border:1px solid var(--line);border-radius:10px;padding:3px;background:var(--surface)}
+input[type=range]{width:100%;accent-color:var(--accent);height:32px}
+.check{display:flex;gap:10px;align-items:center;font-weight:500;min-height:40px}
+.check input{width:22px;height:22px;accent-color:var(--accent)}
+.seg{display:flex;background:var(--surface-2);border-radius:12px;padding:4px;gap:4px}
+.seg button{flex:1;border:0;background:transparent;color:var(--fg);font:600 15px var(--f-body);padding:10px;border-radius:9px;min-height:42px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.filebtn{position:relative;overflow:hidden}
+.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.note{font-size:.875rem;color:var(--muted);background:var(--surface-2);padding:10px 12px;border-radius:10px}
+
+/* lista de modelos */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:12px}
+.card .thumbs{display:flex;gap:6px}
+.card .thumbs canvas{width:calc((100% - 18px)/4);aspect-ratio:9/16;border-radius:6px;background:var(--surface-2);max-width:100%}
+.card .meta{display:flex;flex-direction:column;gap:2px}
+.card .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.empty{padding:28px;text-align:center;border:2px dashed var(--line);border-radius:var(--r);color:var(--muted)}
+
+/* editor */
+.ed-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ed-head .grow{flex:1;min-width:160px}
+.saved{font-size:.85rem;color:var(--ok);font-weight:600}
+.editor{display:grid;grid-template-columns:240px minmax(0,1fr) 340px;gap:16px;align-items:start}
+.strip{display:flex;flex-direction:column;gap:10px}
+.strip-list{display:flex;flex-direction:column;gap:10px}
+.sthumb{position:relative;border:2px solid transparent;border-radius:10px;padding:0;background:none;cursor:pointer;display:flex;gap:10px;align-items:center;text-align:left;color:var(--fg);font:inherit}
+.sthumb canvas{width:72px;aspect-ratio:9/16;border-radius:7px;background:var(--surface-2);display:block}
+.sthumb[aria-current="true"]{border-color:var(--accent)}
+.sthumb .n{font-weight:700}
+.stage{display:flex;flex-direction:column;align-items:center;gap:12px;min-width:0}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+#edCanvas{width:min(100%, calc((100vh - 260px) * 9 / 16));width:min(100%, calc((100dvh - 260px) * 9 / 16));min-width:240px;max-width:100%;aspect-ratio:9/16;
+  border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.18);touch-action:none;background:#222;display:block}
+.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+.layers{display:flex;flex-direction:column;gap:6px}
+.lrow{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;padding:4px 4px 4px 10px;background:var(--surface)}
+.lrow[aria-current="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.lrow .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;padding:8px 0;font-weight:500}
+.lrow .ico{font-size:.7rem;font-weight:800;letter-spacing:.06em;color:var(--muted);width:42px}
+.lrow button{border:0;background:transparent;color:var(--fg);width:38px;height:38px;border-radius:8px;cursor:pointer;font-size:16px}
+.lrow button:hover{background:var(--surface-2)}
+
+/* gerar */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.previews{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.pv{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:10px}
+.pv canvas{width:100%;aspect-ratio:9/16;border-radius:10px;background:#222;touch-action:none;cursor:grab;display:block;max-width:100%}
+.pv .t{display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.tag{font-size:.75rem;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--surface-2);color:var(--muted)}
+.outs{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
+.out{display:flex;flex-direction:column;gap:6px}
+.out img{width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:8px;background:var(--surface-2)}
+.out span{font-size:.8rem;color:var(--muted);word-break:break-all}
+
+/* histórico */
+.hist{display:flex;flex-direction:column;gap:10px}
+.hrow{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px}
+.hrow canvas{width:64px;aspect-ratio:9/16;border-radius:6px;background:var(--surface-2)}
+.hrow .who{font-weight:700}
+.hrow .when{font-variant-numeric:tabular-nums}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
+.modal-box{background:var(--surface);border-radius:16px;padding:20px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:16px}
+.modal-box .row{justify-content:flex-end}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:600;z-index:60;max-width:calc(100% - 32px)}
+.busy{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:55;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1.1rem}
+
+@media (max-width:1100px){ .editor{grid-template-columns:200px minmax(0,1fr)} .editor .side{grid-column:1 / -1} }
+@media (max-width:720px){
+  .top .wrap{gap:8px} .tabs{width:100%} .tabs button{flex:1;padding:10px 6px}
+  .editor{grid-template-columns:minmax(0,1fr)}
+  .strip{order:2} .stage{order:1} .side{order:3}
+  .strip-list{flex-direction:row;overflow-x:auto;padding-bottom:4px}
+  .sthumb{flex-direction:column;gap:4px;flex:none}
+  .sthumb canvas{width:62px}
+  #edCanvas{width:min(100%, calc((100dvh - 200px) * 9 / 16))}
+  .hrow{grid-template-columns:52px minmax(0,1fr)} .hrow .row{grid-column:1 / -1}
+  .hrow canvas{width:52px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="brand"><i aria-hidden="true"></i>Gerador de Stories</div>
+  <nav class="tabs" aria-label="Seções">
+    <button data-view="modelos" aria-current="true">Modelos</button>
+    <button data-view="gerar">Gerar</button>
+    <button data-view="historico">Histórico</button>
+  </nav>
+</div></header>
+
+<main class="wrap">
+  <!-- MODELOS -->
+  <section id="v-modelos" class="view">
+    <div class="row" style="justify-content:space-between">
+      <h2>Modelos de sequência</h2>
+      <div class="row">
+        <button class="btn primary" id="btnNovo">+ Novo modelo</button>
+        <button class="btn" id="btnBackup">Exportar backup</button>
+        <label class="btn filebtn">Importar backup<input type="file" id="inImport" accept=".json,application/json"></label>
+      </div>
+    </div>
+    <div id="tplCards" class="cards"></div>
+  </section>
+
+  <!-- EDITOR -->
+  <section id="v-editor" class="view" hidden>
+    <div class="ed-head">
+      <button class="btn" id="edBack">← Modelos</button>
+      <div class="grow"><input type="text" id="edName" aria-label="Nome do modelo"></div>
+      <span class="saved" id="edSaved"></span>
+      <button class="btn sm" id="edUndo" title="Desfazer">↶ Desfazer</button>
+      <button class="btn sm" id="edRedo" title="Refazer">↷ Refazer</button>
+      <button class="btn primary" id="edUse">Usar este modelo →</button>
+    </div>
+    <div class="editor">
+      <div class="strip">
+        <span class="label">Stories da sequência</span>
+        <div class="strip-list" id="strip"></div>
+        <button class="btn sm" id="addStory">+ Story</button>
+      </div>
+      <div class="stage">
+        <div class="toolbar">
+          <button class="btn sm" id="addText">+ Texto</button>
+          <label class="btn sm filebtn">+ Imagem<input type="file" id="inLayerImg" accept="image/*"></label>
+          <button class="btn sm" id="addLink">+ Lugar do link</button>
+          <button class="btn sm on" id="tgRef" aria-pressed="true">Referência</button>
+          <button class="btn sm on" id="tgSafe" aria-pressed="true">Áreas seguras</button>
+        </div>
+        <canvas id="edCanvas" width="1080" height="1920"></canvas>
+        <p class="small muted" style="text-align:center">Toque numa camada para selecionar. Arraste para mover, ● canto para redimensionar, ↻ para girar.</p>
+      </div>
+      <div class="side">
+        <div class="panel" id="propPanel"></div>
+        <div class="panel">
+          <span class="label">Camadas (de cima para baixo)</span>
+          <div class="layers" id="layerList"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GERAR -->
+  <section id="v-gerar" class="view" hidden>
+    <h2>Gerar para uma influencer</h2>
+    <div class="steps">
+      <div class="panel">
+        <span class="label">1 · Modelo</span>
+        <label class="field"><span>Sequência</span><select id="gTpl"></select></label>
+      </div>
+      <div class="panel">
+        <span class="label">2 · Influencer</span>
+        <label class="field"><span>Nome (preenche {nome} nos textos e nos arquivos)</span><input type="text" id="gNome" placeholder="Ex.: Ana Souza" autocomplete="off"></label>
+        <label class="field"><span>Link (opcional, preenche {link})</span><input type="url" id="gLink" placeholder="https://..." autocomplete="off"></label>
+      </div>
+      <div class="panel">
+        <span class="label">3 · Foto</span>
+        <label class="btn primary filebtn full">Escolher foto da influencer<input type="file" id="gFoto" accept="image/*"></label>
+        <p class="small muted" id="gFotoInfo">Nenhuma foto escolhida. A foto vai para todos os stories com fundo de foto.</p>
+      </div>
+    </div>
+    <div class="row" style="justify-content:space-between">
+      <h3>Ajuste cada story</h3>
+      <label class="check small"><input type="checkbox" id="gGuide" checked> Mostrar áreas seguras e lugar do link (não sai na imagem)</label>
+    </div>
+    <p class="small muted">Arraste a foto para posicionar. Use o controle de zoom abaixo de cada story.</p>
+    <div class="previews" id="gPreviews"></div>
+    <div class="panel">
+      <span class="label">4 · Exportar (1080 × 1920 PNG)</span>
+      <div class="row">
+        <button class="btn primary" id="gPrep">Preparar imagens</button>
+        <button class="btn" id="gShare" hidden>Compartilhar</button>
+        <button class="btn" id="gZip" hidden>Baixar tudo (.zip)</button>
+      </div>
+      <p class="small muted" id="gPrepInfo">Ao preparar, a sequência fica salva no histórico.</p>
+      <div class="outs" id="gOuts"></div>
+    </div>
+  </section>
+
+  <!-- HISTÓRICO -->
+  <section id="v-historico" class="view" hidden>
+    <h2>Histórico</h2>
+    <div class="hist" id="histList"></div>
+  </section>
+</main>
+
+<div class="modal" id="modal" hidden><div class="modal-box" role="dialog" aria-modal="true">
+  <p id="modalMsg"></p>
+  <div class="row"><button class="btn" id="modalNo">Cancelar</button><button class="btn danger solid" id="modalYes">Excluir</button></div>
+</div></div>
+<div class="busy" id="busy" hidden>Gerando…</div>
+
+<script>
+'use strict';
+/* =========================================================
+   Gerador de Stories — módulo independente
+   API para integrar com outro app: window.GeradorStories (no fim do arquivo)
+   ========================================================= */
+const W = 1080, H = 1920;
+const SAFE_TOP = 250, SAFE_BOTTOM = 340;   // faixas que o Instagram cobre
+const FONTS = [
+  ['Source Serif 4', 'Serifada clássica'], ['Playfair Display', 'Playfair'], ['Montserrat', 'Montserrat'],
+  ['Poppins', 'Poppins'], ['Figtree', 'Figtree'], ['Bebas Neue', 'Bebas (títulos)'], ['Pacifico', 'Pacifico (manuscrita)']
+];
+const $ = s => document.querySelector(s);
+const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-5);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const slug = s => (s || 'influencer').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'influencer';
+const fill = (t, v) => String(t || '').replace(/\{nome\}/gi, v.nome || '{nome}').replace(/\{link\}/gi, v.link || '{link}');
+
+/* ---------------- banco local (IndexedDB, com memória de reserva) ---------------- */
+const DB = {
+  db: null, mem: null,
+  async open() {
+    try {
+      await new Promise((res, rej) => {
+        const r = indexedDB.open('gerador-stories', 1);
+        r.onupgradeneeded = () => { const d = r.result; for (const s of ['templates', 'images', 'history']) if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath: 'id' }); };
+        r.onsuccess = () => { this.db = r.result; res(); };
+        r.onerror = () => rej(r.error);
+      });
+    } catch (e) {
+      this.mem = { templates: new Map(), images: new Map(), history: new Map() };
+      toast('Armazenamento local indisponível: nada será salvo ao fechar.');
+    }
+  },
+  req(store, mode, fn) {
+    if (this.mem) { const m = this.mem[store]; return Promise.resolve(fn(m, true)); }
+    return new Promise((res, rej) => {
+      const t = this.db.transaction(store, mode); const r = fn(t.objectStore(store), false);
+      t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+    });
+  },
+  get(s, id) { return this.req(s, 'readonly', (o, m) => m ? o.get(id) : o.get(id)); },
+  all(s) { return this.req(s, 'readonly', (o, m) => m ? [...o.values()] : o.getAll()); },
+  put(s, v) { return this.req(s, 'readwrite', (o, m) => m ? o.set(v.id, v) : o.put(v)); },
+  del(s, id) { return this.req(s, 'readwrite', (o, m) => m ? o.delete(id) : o.delete(id)); }
+};
+
+/* ---------------- imagens ---------------- */
+const loaded = new Map(), loading = new Map(), waiters = {};
+function blobToImage(blob) {
+  return new Promise((res, rej) => { const u = URL.createObjectURL(blob); const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = u; });
+}
+function loadImg(id) {
+  if (!id) return Promise.resolve(null);
+  if (loaded.has(id)) return Promise.resolve(loaded.get(id));
+  if (!loading.has(id)) loading.set(id, (async () => {
+    try { const r = await DB.get('images', id); const i = r ? await blobToImage(r.blob) : null; loaded.set(id, i); return i; }
+    catch (e) { loaded.set(id, null); return null; }
+    finally { const w = waiters[id]; delete waiters[id]; w && w.forEach(f => f()); }
+  })());
+  return loading.get(id);
+}
+function img(id, redraw) {
+  if (!id) return null;
+  if (loaded.has(id)) return loaded.get(id);
+  if (redraw) (waiters[id] ||= new Set()).add(redraw);
+  loadImg(id); return null;
+}
+async function saveImageFile(file) {
+  let blob = file;
+  const i = await blobToImage(file);
+  const long = Math.max(i.naturalWidth, i.naturalHeight), max = 3000;
+  if (long > max || !/png|jpe?g|webp/.test(file.type)) {
+    const s = Math.min(1, max / long), c = document.createElement('canvas');
+    c.width = Math.round(i.naturalWidth * s); c.height = Math.round(i.naturalHeight * s);
+    c.getContext('2d').drawImage(i, 0, 0, c.width, c.height);
+    const png = file.type === 'image/png';
+    blob = await new Promise(r => c.toBlob(r, png ? 'image/png' : 'image/jpeg', 0.92));
+  }
+  const id = uid();
+  await DB.put('images', { id, blob });
+  loaded.set(id, blob === file ? i : await blobToImage(blob));
+  return id;
+}
+
+/* ---------------- modelo de dados ---------------- */
+function publiLayer() {
+  return { id: uid(), type: 'text', protected: true, text: 'Publicidade', font: 'Figtree', weight: 700, size: 34, color: '#ffffff',
+    bg: 'pill', bgColor: '#000000', bgOpacity: 0.45, align: 'center', shadow: false, x: 540, y: 300, w: 420, rot: 0, opacity: 1, lineHeight: 1.3 };
+}
+function textLayer(o = {}) {
+  return Object.assign({ id: uid(), type: 'text', text: 'Seu texto aqui', font: 'Source Serif 4', weight: 400, size: 64, color: '#ffffff',
+    bg: 'block', bgColor: '#6d1233', bgOpacity: 1, align: 'center', shadow: false, x: 540, y: 960, w: 860, rot: 0, opacity: 1, lineHeight: 1.22 }, o);
+}
+function linkLayer() { return { id: uid(), type: 'link', x: 540, y: 1480, w: 560, h: 140, rot: 0 }; }
+function newStory(mode = 'foto') {
+  return { id: uid(), mode, bgImageId: null, refImageId: null, refOpacity: 0.5, refOnTop: false, layers: [publiLayer()] };
+}
+function newTemplate(name = 'Nova sequência') {
+  const t = Date.now();
+  return { id: uid(), name, createdAt: t, updatedAt: t, sampleImageId: null, previewName: 'Ana', stories: [newStory(), newStory()] };
+}
+
+/* ---------------- desenho ---------------- */
+const mctx = document.createElement('canvas').getContext('2d');
+const fontStr = l => `${l.weight || 400} ${l.size}px "${l.font}", system-ui, sans-serif`;
+function hexA(hex, a) {
+  const h = (hex || '#000000').replace('#', ''); const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a ?? 1})`;
+}
+function layoutText(l, vals) {
+  mctx.font = fontStr(l);
+  const padX = l.bg === 'none' ? 0 : l.size * 0.45, padY = l.bg === 'block' ? l.size * 0.32 : (l.bg === 'pill' ? l.size * 0.12 : 0);
+  const maxW = Math.max(20, l.w - padX * 2);
+  const lines = [];
+  for (const para of fill(l.text, vals).split('\n')) {
+    let line = '';
+    for (const word of para.split(' ')) {
+      const test = line ? line + ' ' + word : word;
+      if (line && mctx.measureText(test).width > maxW) { lines.push(line); line = word; } else line = test;
+    }
+    lines.push(line);
+  }
+  const lineH = l.size * (l.lineHeight || 1.22);
+  const widths = lines.map(s => mctx.measureText(s).width);
+  return { lines, widths, lineH, padX, padY, h: lines.length * lineH + padY * 2 };
+}
+function layerH(l, vals) { return l.type === 'text' ? layoutText(l, vals).h : l.h; }
+function rrect(ctx, x, y, w, h, r) {
+  r = Math.min(r, h / 2, w / 2); ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function drawText(ctx, l, vals, redraw) {
+  const f = fontStr(l);
+  if (redraw && document.fonts && !document.fonts.check(f, 'AaÇã')) document.fonts.load(f, 'AaÇã').then(redraw).catch(() => {});
+  const L = layoutText(l, vals);
+  ctx.font = f; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  const top = -L.h / 2, maxLW = Math.max(0, ...L.widths);
+  let aL = -l.w / 2 + L.padX, aR = l.w / 2 - L.padX;
+  if (l.bg === 'block') {
+    const bw = Math.min(l.w, maxLW + 2 * L.padX);
+    const bx = l.align === 'left' ? -l.w / 2 : l.align === 'right' ? l.w / 2 - bw : -bw / 2;
+    ctx.fillStyle = hexA(l.bgColor, l.bgOpacity); rrect(ctx, bx, top, bw, L.h, l.size * 0.22); ctx.fill();
+    aL = bx + L.padX; aR = bx + bw - L.padX;
+  }
+  L.lines.forEach((ln, i) => {
+    const tw = L.widths[i], cy = top + L.padY + L.lineH * (i + 0.5);
+    const tx = l.align === 'left' ? aL : l.align === 'right' ? aR - tw : (aL + aR) / 2 - tw / 2;
+    if (l.bg === 'pill' && ln.trim()) {
+      ctx.fillStyle = hexA(l.bgColor, l.bgOpacity); const ph = L.lineH * 0.98;
+      rrect(ctx, tx - L.padX, cy - ph / 2, tw + 2 * L.padX, ph, ph / 2); ctx.fill();
+    }
+    if (l.shadow) { ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = l.size * 0.18; ctx.shadowOffsetY = l.size * 0.04; }
+    ctx.fillStyle = l.color; ctx.fillText(ln, tx, cy);
+    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+  });
+}
+function coverRect(i, adj) {
+  const s = Math.max(W / i.naturalWidth, H / i.naturalHeight) * (adj?.zoom || 1);
+  const dw = i.naturalWidth * s, dh = i.naturalHeight * s;
+  return { x: (W - dw) / 2 + (adj?.ox || 0), y: (H - dh) / 2 + (adj?.oy || 0), w: dw, h: dh };
+}
+function clampAdj(i, a) {
+  if (!i) return a;
+  const s = Math.max(W / i.naturalWidth, H / i.naturalHeight) * a.zoom;
+  const mx = (i.naturalWidth * s - W) / 2, my = (i.naturalHeight * s - H) / 2;
+  a.ox = clamp(a.ox, -mx, mx); a.oy = clamp(a.oy, -my, my); return a;
+}
+/* o: {photoId, adj, vals, guides(bool: áreas seguras + link), showRef, selId, editor, redraw, hs} */
+function drawStory(ctx, st, o) {
+  ctx.save();
+  ctx.fillStyle = '#2a2026'; ctx.fillRect(0, 0, W, H);
+  const bgId = st.mode === 'pronta' ? st.bgImageId : o.photoId;
+  const bg = img(bgId, o.redraw);
+  if (bg) { const r = coverRect(bg, st.mode === 'pronta' ? null : o.adj); ctx.drawImage(bg, r.x, r.y, r.w, r.h); }
+  else if (o.editor) {
+    const g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#4a2a3a'); g.addColorStop(1, '#1f1a2e');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.font = '600 46px Figtree, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(st.mode === 'pronta' ? 'Envie a imagem pronta' : 'Foto da influencer', W / 2, H / 2 + 260);
+  }
+  const ref = o.showRef && st.refImageId ? img(st.refImageId, o.redraw) : null;
+  const drawRef = () => { if (!ref) return; ctx.globalAlpha = st.refOpacity; const r = coverRect(ref, null); ctx.drawImage(ref, r.x, r.y, r.w, r.h); ctx.globalAlpha = 1; };
+  if (!st.refOnTop) drawRef();
+  for (const l of st.layers) {
+    if (l.type === 'link') { if (o.guides) drawLinkMark(ctx, l); continue; }
+    ctx.save(); ctx.translate(l.x, l.y); ctx.rotate((l.rot || 0) * Math.PI / 180); ctx.globalAlpha = l.opacity ?? 1;
+    if (l.type === 'image') { const i = img(l.imageId, o.redraw); if (i) ctx.drawImage(i, -l.w / 2, -l.h / 2, l.w, l.h); }
+    else drawText(ctx, l, o.vals, o.redraw);
+    ctx.restore();
+  }
+  if (st.refOnTop) drawRef();
+  if (o.guides) drawSafe(ctx);
+  if (o.selId) { const l = st.layers.find(x => x.id === o.selId); if (l) drawSel(ctx, l, o); }
+  if (o.snap) { ctx.strokeStyle = '#ff3d8b'; ctx.lineWidth = 3; ctx.setLineDash([]);
+    if (o.snap.x) { ctx.beginPath(); ctx.moveTo(540, 0); ctx.lineTo(540, H); ctx.stroke(); }
+    if (o.snap.y) { ctx.beginPath(); ctx.moveTo(0, 960); ctx.lineTo(W, 960); ctx.stroke(); } }
+  ctx.restore();
+}
+function drawSafe(ctx) {
+  ctx.fillStyle = 'rgba(30,140,255,.18)'; ctx.fillRect(0, 0, W, SAFE_TOP); ctx.fillRect(0, H - SAFE_BOTTOM, W, SAFE_BOTTOM);
+  ctx.strokeStyle = 'rgba(80,170,255,.9)'; ctx.lineWidth = 3; ctx.setLineDash([18, 12]);
+  ctx.beginPath(); ctx.moveTo(0, SAFE_TOP); ctx.lineTo(W, SAFE_TOP); ctx.moveTo(0, H - SAFE_BOTTOM); ctx.lineTo(W, H - SAFE_BOTTOM); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.font = '600 30px Figtree, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('Área coberta pelo Instagram (topo)', 30, SAFE_TOP - 32); ctx.fillText('Área coberta pelo Instagram (rodapé)', 30, H - SAFE_BOTTOM + 32);
+}
+function drawLinkMark(ctx, l) {
+  ctx.save(); ctx.translate(l.x, l.y); ctx.rotate((l.rot || 0) * Math.PI / 180);
+  ctx.fillStyle = 'rgba(255,214,0,.22)'; rrect(ctx, -l.w / 2, -l.h / 2, l.w, l.h, 26); ctx.fill();
+  ctx.strokeStyle = '#ffd400'; ctx.lineWidth = 5; ctx.setLineDash([22, 14]); rrect(ctx, -l.w / 2, -l.h / 2, l.w, l.h, 26); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = '#ffe766'; ctx.font = '700 36px Figtree, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('🔗 ADESIVO DE LINK AQUI', 0, 0); ctx.restore();
+}
+function drawSel(ctx, l, o) {
+  const h = layerH(l, o.vals), hs = o.hs || 2;
+  ctx.save(); ctx.translate(l.x, l.y); ctx.rotate((l.rot || 0) * Math.PI / 180);
+  ctx.strokeStyle = '#ff3d8b'; ctx.lineWidth = 2.5 * hs; ctx.setLineDash([10 * hs, 6 * hs]); ctx.strokeRect(-l.w / 2, -h / 2, l.w, h); ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(0, -h / 2); ctx.lineTo(0, -h / 2 - 34 * hs); ctx.stroke();
+  const dot = (x, y, label) => { ctx.fillStyle = '#ff3d8b'; ctx.beginPath(); ctx.arc(x, y, 14 * hs, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = `700 ${16 * hs}px Figtree, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, x, y + hs); };
+  dot(l.w / 2, h / 2, '⤡'); dot(0, -h / 2 - 34 * hs, '↻');
+  ctx.restore();
+}
+function storyImageIds(st, extra = []) {
+  return [st.mode === 'pronta' ? st.bgImageId : null, ...st.layers.filter(l => l.type === 'image').map(l => l.imageId), ...extra].filter(Boolean);
+}
+async function fontsFor(st, vals) {
+  if (!document.fonts) return;
+  await Promise.all(st.layers.filter(l => l.type === 'text').map(l => document.fonts.load(fontStr(l), fill(l.text, vals) || 'A').catch(() => {})));
+}
+function thumb(canvas, st, tpl, extra = {}) {
+  canvas.width = 216; canvas.height = 384;
+  const ctx = canvas.getContext('2d'); const redraw = () => thumb(canvas, st, tpl, extra);
+  ctx.setTransform(216 / W, 0, 0, 384 / H, 0, 0);
+  drawStory(ctx, st, Object.assign({ photoId: tpl.sampleImageId, vals: { nome: tpl.previewName }, editor: true, redraw }, extra));
+}
+
+/* ---------------- interface geral ---------------- */
+let toastT;
+function toast(msg) { let t = $('.toast'); if (!t) { t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
+  t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2800); }
+function ask(msg, yes = 'Excluir') {
+  return new Promise(res => { $('#modalMsg').textContent = msg; $('#modalYes').textContent = yes; $('#modal').hidden = false;
+    const done = v => { $('#modal').hidden = true; res(v); }; $('#modalYes').onclick = () => done(true); $('#modalNo').onclick = () => done(false); });
+}
+function download(blob, name) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 8000);
+}
+let current = 'modelos';
+function show(v) {
+  current = v;
+  for (const s of ['modelos', 'editor', 'gerar', 'historico']) $('#v-' + s).hidden = s !== v;
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-current', String(b.dataset.view === v || (v === 'editor' && b.dataset.view === 'modelos'))));
+  if (v === 'modelos') renderTplList();
+  if (v === 'gerar') renderGerar();
+  if (v === 'historico') renderHist();
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = async () => { if (current === 'editor') await saveNow(); show(b.dataset.view); });
+
+/* ---------------- lista de modelos ---------------- */
+async function allTemplates() { return (await DB.all('templates')).sort((a, b) => b.updatedAt - a.updatedAt); }
+async function renderTplList() {
+  const list = await allTemplates(), box = $('#tplCards');
+  if (!list.length) { box.innerHTML = '<div class="empty">Nenhum modelo ainda. Toque em <b>+ Novo modelo</b> para criar a primeira sequência.</div>'; return; }
+  box.innerHTML = '';
+  for (const t of list) {
+    const c = document.createElement('div'); c.className = 'card';
+    c.innerHTML = `<div class="thumbs"></div><div class="meta"><h3>${esc(t.name)}</h3>
+      <span class="small muted">${t.stories.length} stories · editado ${new Date(t.updatedAt).toLocaleDateString('pt-BR')}</span></div>
+      <div class="actions"><button class="btn primary" data-a="use">Usar</button><button class="btn" data-a="edit">Editar</button>
+      <button class="btn sm" data-a="dup">Duplicar</button><button class="btn sm danger" data-a="del">Excluir</button></div>`;
+    t.stories.slice(0, 4).forEach(st => { const cv = document.createElement('canvas'); c.querySelector('.thumbs').appendChild(cv); thumb(cv, st, t); });
+    c.querySelector('[data-a=use]').onclick = () => { G.tplId = t.id; G.adj = {}; G.files = null; show('gerar'); };
+    c.querySelector('[data-a=edit]').onclick = () => openEditor(t.id);
+    c.querySelector('[data-a=dup]').onclick = async () => {
+      const n = JSON.parse(JSON.stringify(t)); n.id = uid(); n.name = t.name + ' (cópia)'; n.createdAt = n.updatedAt = Date.now();
+      n.stories.forEach(s => { s.id = uid(); s.layers.forEach(l => l.id = uid()); });
+      await DB.put('templates', n); renderTplList(); toast('Modelo duplicado');
+    };
+    c.querySelector('[data-a=del]').onclick = async () => { if (await ask(`Excluir o modelo "${t.name}"? Isso não pode ser desfeito.`)) { await DB.del('templates', t.id); renderTplList(); } };
+    box.appendChild(c);
+  }
+}
+$('#btnNovo').onclick = async () => { const t = newTemplate(); await DB.put('templates', t); openEditor(t.id); };
+
+/* ---------------- editor ---------------- */
+const E = { tpl: null, si: 0, sel: null, showRef: true, showSafe: true, undo: [], redo: [], lastPush: 0, drag: null, snap: null };
+const cv = $('#edCanvas'), cctx = cv.getContext('2d');
+const curStory = () => E.tpl.stories[E.si];
+const selLayer = () => E.sel && curStory().layers.find(l => l.id === E.sel);
+const vals = () => ({ nome: E.tpl.previewName || 'Ana', link: 'seulink.com' });
+
+async function openEditor(id) {
+  E.tpl = await DB.get('templates', id); E.si = 0; E.sel = null; E.undo = []; E.redo = [];
+  $('#edName').value = E.tpl.name; $('#edSaved').textContent = '';
+  show('editor'); renderEditor();
+}
+let rafPending = false;
+function draw() { if (rafPending) return; rafPending = true; requestAnimationFrame(() => { rafPending = false; drawNow(); }); }
+function drawNow() {
+  if (!E.tpl) return;
+  const hs = W / (cv.clientWidth || 360);
+  cctx.setTransform(1, 0, 0, 1, 0, 0);
+  drawStory(cctx, curStory(), { photoId: E.tpl.sampleImageId, vals: vals(), guides: E.showSafe, showRef: E.showRef, selId: E.sel, editor: true, redraw: draw, hs, snap: E.snap });
+}
+function renderEditor() { renderStrip(); renderPanel(); renderLayers(); draw(); updUndo(); }
+function renderStrip() {
+  const box = $('#strip'); box.innerHTML = '';
+  E.tpl.stories.forEach((st, i) => {
+    const b = document.createElement('button'); b.className = 'sthumb'; b.setAttribute('aria-current', String(i === E.si));
+    const c = document.createElement('canvas'); b.appendChild(c);
+    b.insertAdjacentHTML('beforeend', `<span><span class="n">Story ${i + 1}</span><br><span class="small muted">${st.mode === 'pronta' ? 'Imagem pronta' : 'Foto da influencer'}</span></span>`);
+    b.onclick = () => { E.si = i; E.sel = null; renderEditor(); };
+    box.appendChild(b); thumb(c, st, E.tpl);
+  });
+  $('#addStory').disabled = E.tpl.stories.length >= 8;
+}
+let thumbT;
+function refreshThumbsSoon() { clearTimeout(thumbT); thumbT = setTimeout(() => {
+  document.querySelectorAll('#strip canvas').forEach((c, i) => E.tpl.stories[i] && thumb(c, E.tpl.stories[i], E.tpl)); }, 400); }
+
+/* salvar + desfazer */
+let saveT;
+function changed() { E.tpl.updatedAt = Date.now(); $('#edSaved').textContent = ''; clearTimeout(saveT); saveT = setTimeout(saveNow, 600); refreshThumbsSoon(); draw(); }
+async function saveNow() { clearTimeout(saveT); if (!E.tpl) return; await DB.put('templates', E.tpl); $('#edSaved').textContent = '✓ Salvo'; }
+function pushUndo(force) {
+  const now = Date.now(); if (!force && now - E.lastPush < 700) return; E.lastPush = now;
+  E.undo.push(JSON.stringify(E.tpl.stories)); if (E.undo.length > 60) E.undo.shift(); E.redo = []; updUndo();
+}
+function updUndo() { $('#edUndo').disabled = !E.undo.length; $('#edRedo').disabled = !E.redo.length; }
+function undoRedo(from, to) {
+  if (!from.length) return; to.push(JSON.stringify(E.tpl.stories)); E.tpl.stories = JSON.parse(from.pop());
+  E.si = Math.min(E.si, E.tpl.stories.length - 1); if (!selLayer()) E.sel = null; E.lastPush = 0; changed(); renderEditor();
+}
+$('#edUndo').onclick = () => undoRedo(E.undo, E.redo);
+$('#edRedo').onclick = () => undoRedo(E.redo, E.undo);
+$('#edName').oninput = e => { E.tpl.name = e.target.value || 'Sem nome'; changed(); };
+$('#edBack').onclick = async () => { await saveNow(); show('modelos'); };
+$('#edUse').onclick = async () => { await saveNow(); G.tplId = E.tpl.id; G.adj = {}; G.files = null; show('gerar'); };
+
+/* adicionar camadas */
+$('#addText').onclick = () => { pushUndo(true); const l = textLayer(); curStory().layers.push(l); E.sel = l.id; changed(); renderPanel(); renderLayers(); };
+$('#addLink').onclick = () => {
+  const ex = curStory().layers.find(l => l.type === 'link');
+  if (ex) { E.sel = ex.id; toast('Este story já tem o lugar do link. Arraste para posicionar.'); }
+  else { pushUndo(true); const l = linkLayer(); curStory().layers.push(l); E.sel = l.id; changed(); }
+  renderPanel(); renderLayers(); draw();
+};
+$('#inLayerImg').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  const id = await saveImageFile(f), i = loaded.get(id);
+  const w = Math.min(800, i.naturalWidth), h = w * i.naturalHeight / i.naturalWidth;
+  pushUndo(true); const l = { id: uid(), type: 'image', imageId: id, x: 540, y: 960, w, h, rot: 0, opacity: 1 };
+  curStory().layers.push(l); E.sel = l.id; changed(); renderPanel(); renderLayers();
+};
+function toggle(btn, key) { E[key] = !E[key]; btn.classList.toggle('on', E[key]); btn.setAttribute('aria-pressed', String(E[key])); draw(); }
+$('#tgRef').onclick = e => toggle(e.currentTarget, 'showRef');
+$('#tgSafe').onclick = e => toggle(e.currentTarget, 'showSafe');
+$('#addStory').onclick = () => { pushUndo(true); E.tpl.stories.push(newStory()); E.si = E.tpl.stories.length - 1; E.sel = null; changed(); renderEditor(); };
+
+/* arrastar / redimensionar / girar */
+function toStory(e, c) { const r = c.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height }; }
+function toLocal(p, l) { const dx = p.x - l.x, dy = p.y - l.y, a = -(l.rot || 0) * Math.PI / 180; return { x: dx * Math.cos(a) - dy * Math.sin(a), y: dx * Math.sin(a) + dy * Math.cos(a) }; }
+cv.addEventListener('pointerdown', e => {
+  const p = toStory(e, cv), hs = W / cv.clientWidth, st = curStory(), v = vals();
+  let mode = null, l = selLayer();
+  if (l) {
+    const loc = toLocal(p, l), h = layerH(l, v), R = 30 * hs;
+    if (Math.hypot(loc.x - l.w / 2, loc.y - h / 2) < R) mode = 'resize';
+    else if (Math.hypot(loc.x, loc.y + h / 2 + 34 * hs) < R) mode = 'rotate';
+  }
+  if (!mode) {
+    l = null;
+    for (let i = st.layers.length - 1; i >= 0; i--) {
+      const c = st.layers[i]; if (c.type === 'link' && !E.showSafe) continue;
+      const loc = toLocal(p, c), h = layerH(c, v), pad = 8 * hs;
+      if (Math.abs(loc.x) <= c.w / 2 + pad && Math.abs(loc.y) <= h / 2 + pad) { l = c; break; }
+    }
+    if (l) mode = 'move';
+  }
+  if (!l) { if (E.sel) { E.sel = null; renderPanel(); renderLayers(); draw(); } return; }
+  if (E.sel !== l.id) { E.sel = l.id; renderPanel(); renderLayers(); }
+  E.drag = { mode, p0: p, l0: JSON.parse(JSON.stringify(l)), moved: false, before: JSON.stringify(E.tpl.stories),
+    a0: Math.atan2(p.y - l.y, p.x - l.x), d0: Math.max(1, Math.hypot(p.x - l.x, p.y - l.y)) };
+  cv.setPointerCapture(e.pointerId); draw(); e.preventDefault();
+});
+cv.addEventListener('pointermove', e => {
+  const d = E.drag; if (!d) return; const l = selLayer(); if (!l) return;
+  const p = toStory(e, cv), hs = W / cv.clientWidth, o = d.l0;
+  if (!d.moved && Math.hypot(p.x - d.p0.x, p.y - d.p0.y) < 4 * hs) return;
+  d.moved = true; E.snap = null;
+  if (d.mode === 'move') {
+    let x = o.x + p.x - d.p0.x, y = o.y + p.y - d.p0.y; const sn = {};
+    if (Math.abs(x - 540) < 14 * hs) { x = 540; sn.x = 1; } if (Math.abs(y - 960) < 14 * hs) { y = 960; sn.y = 1; }
+    l.x = Math.round(x); l.y = Math.round(y); E.snap = (sn.x || sn.y) ? sn : null;
+  } else if (d.mode === 'resize') {
+    if (l.type === 'link') { const loc = toLocal(p, l); l.w = Math.max(120, Math.round(Math.abs(loc.x) * 2)); l.h = Math.max(60, Math.round(Math.abs(loc.y) * 2)); }
+    else {
+      const k = Math.max(0.05, Math.hypot(p.x - l.x, p.y - l.y) / d.d0);
+      if (l.type === 'image') { l.w = Math.max(20, o.w * k); l.h = Math.max(20, o.h * k); }
+      else { l.size = Math.round(clamp(o.size * k, l.protected ? 24 : 12, 400)); l.w = Math.max(80, Math.round(o.w * k)); }
+    }
+  } else if (d.mode === 'rotate') {
+    let r = o.rot + (Math.atan2(p.y - l.y, p.x - l.x) - d.a0) * 180 / Math.PI;
+    r = ((r + 540) % 360) - 180; for (const s of [-180, -90, 0, 90, 180]) if (Math.abs(r - s) < 5) r = s;
+    l.rot = Math.round(r);
+  }
+  draw();
+});
+function endDrag() {
+  const d = E.drag; if (!d) return; E.drag = null; E.snap = null;
+  if (d.moved) { E.undo.push(d.before); E.redo = []; updUndo(); changed(); renderPanel(); } else draw();
+}
+cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', endDrag);
+document.addEventListener('keydown', e => {
+  if (current !== 'editor' || /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? undoRedo(E.redo, E.undo) : undoRedo(E.undo, E.redo); return; }
+  const l = selLayer(); if (!l) return;
+  const step = e.shiftKey ? 20 : 2, mv = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
+  if (mv) { e.preventDefault(); pushUndo(); l.x += mv[0]; l.y += mv[1]; changed(); }
+  if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteLayer(l); }
+});
+function deleteLayer(l) {
+  if (l.protected) { toast('O selo de publicidade pode ser movido e editado, mas não excluído.'); return; }
+  pushUndo(true); const st = curStory(); st.layers = st.layers.filter(x => x !== l); E.sel = null; changed(); renderPanel(); renderLayers();
+}
+
+/* camadas */
+function layerName(l) {
+  if (l.type === 'link') return ['LINK', 'Lugar do adesivo de link'];
+  if (l.type === 'image') return ['IMG', 'Imagem'];
+  return [l.protected ? 'PUBLI' : 'TEXTO', (l.text || '').split('\n')[0] || '(vazio)'];
+}
+function renderLayers() {
+  const st = curStory(), box = $('#layerList'); box.innerHTML = '';
+  [...st.layers].reverse().forEach(l => {
+    const [ico, nm] = layerName(l), r = document.createElement('div'); r.className = 'lrow'; r.setAttribute('aria-current', String(l.id === E.sel));
+    r.innerHTML = `<span class="ico">${ico}</span><span class="nm">${esc(nm)}</span>
+      <button title="Subir" aria-label="Subir camada">▲</button><button title="Descer" aria-label="Descer camada">▼</button>`;
+    r.querySelector('.nm').onclick = () => { E.sel = l.id; renderPanel(); renderLayers(); draw(); };
+    const [up, dn] = r.querySelectorAll('button');
+    up.onclick = () => moveLayer(l, 1); dn.onclick = () => moveLayer(l, -1);
+    box.appendChild(r);
+  });
+  if (!st.layers.length) box.innerHTML = '<p class="small muted">Sem camadas.</p>';
+}
+function moveLayer(l, dir) {
+  const a = curStory().layers, i = a.indexOf(l), j = i + dir; if (j < 0 || j >= a.length) return;
+  pushUndo(true); [a[i], a[j]] = [a[j], a[i]]; changed(); renderLayers();
+}
+
+/* painel de propriedades */
+function bind(id, fn, ev = 'input') { const el = document.getElementById(id); if (el) el.addEventListener(ev, e => { pushUndo(); fn(e.target); changed(); }); }
+function renderPanel() {
+  const p = $('#propPanel'), l = selLayer(), st = curStory();
+  if (!l) {
+    p.innerHTML = `<span class="label">Story ${E.si + 1} de ${E.tpl.stories.length}</span>
+      <div class="field"><span>Fundo deste story</span><div class="seg">
+        <button id="mFoto" aria-pressed="${st.mode === 'foto'}">Foto da influencer</button>
+        <button id="mPronta" aria-pressed="${st.mode === 'pronta'}">Imagem pronta</button></div></div>
+      ${st.mode === 'pronta'
+        ? `<label class="btn filebtn">${st.bgImageId ? 'Trocar' : 'Enviar'} imagem pronta<input type="file" id="inBg" accept="image/*"></label>
+           <p class="small muted">Story sem foto da influencer: sai igual para todas.</p>`
+        : `<label class="btn filebtn">${E.tpl.sampleImageId ? 'Trocar' : 'Enviar'} foto de exemplo<input type="file" id="inSample" accept="image/*"></label>
+           <p class="small muted">A foto de exemplo serve só para visualizar o modelo. Na hora de gerar, entra a foto da influencer.</p>`}
+      <div class="field"><span>Imagem de referência (some na exportação)</span>
+        <div class="row"><label class="btn sm filebtn">${st.refImageId ? 'Trocar' : 'Enviar'} referência<input type="file" id="inRef" accept="image/*"></label>
+        ${st.refImageId ? '<button class="btn sm danger" id="rmRef">Remover</button>' : ''}</div></div>
+      ${st.refImageId ? `<label class="field"><span>Transparência da referência</span><input type="range" id="refOp" min="0.1" max="0.9" step="0.05" value="${st.refOpacity}"></label>
+        <label class="check"><input type="checkbox" id="refTop" ${st.refOnTop ? 'checked' : ''}> Mostrar referência por cima das camadas</label>` : ''}
+      <label class="field"><span>Nome de teste para {nome}</span><input type="text" id="pvName" value="${esc(E.tpl.previewName || '')}"></label>
+      <div class="grid2"><button class="btn sm" id="stLeft">← Mover</button><button class="btn sm" id="stRight">Mover →</button>
+        <button class="btn sm" id="stDup">Duplicar story</button><button class="btn sm danger" id="stDel">Excluir story</button></div>`;
+    $('#mFoto').onclick = () => { pushUndo(true); st.mode = 'foto'; changed(); renderEditor(); };
+    $('#mPronta').onclick = () => { pushUndo(true); st.mode = 'pronta'; changed(); renderEditor(); };
+    const up = (id, fn) => { const el = document.getElementById(id); if (el) el.onchange = async e => { const f = e.target.files[0]; if (!f) return; pushUndo(true); fn(await saveImageFile(f)); changed(); renderEditor(); }; };
+    up('inBg', id => st.bgImageId = id); up('inSample', id => E.tpl.sampleImageId = id); up('inRef', id => { st.refImageId = id; E.showRef = true; $('#tgRef').classList.add('on'); });
+    if ($('#rmRef')) $('#rmRef').onclick = () => { pushUndo(true); st.refImageId = null; changed(); renderPanel(); };
+    bind('refOp', t => st.refOpacity = +t.value); bind('refTop', t => st.refOnTop = t.checked, 'change');
+    $('#pvName').oninput = e => { E.tpl.previewName = e.target.value; changed(); };
+    $('#stLeft').onclick = () => moveStory(-1); $('#stRight').onclick = () => moveStory(1);
+    $('#stDup').onclick = () => { pushUndo(true); const c = JSON.parse(JSON.stringify(st)); c.id = uid(); c.layers.forEach(x => x.id = uid()); E.tpl.stories.splice(E.si + 1, 0, c); E.si++; changed(); renderEditor(); };
+    $('#stDel').onclick = async () => {
+      if (E.tpl.stories.length <= 1) { toast('A sequência precisa de pelo menos 1 story.'); return; }
+      if (!await ask(`Excluir o story ${E.si + 1}?`)) return;
+      pushUndo(true); E.tpl.stories.splice(E.si, 1); E.si = Math.max(0, E.si - 1); changed(); renderEditor();
+    };
+    return;
+  }
+  const common = `<label class="field"><span>Girar (${l.rot || 0}°)</span><input type="range" id="pRot" min="-180" max="180" step="1" value="${l.rot || 0}"></label>`;
+  const acts = `<div class="grid2"><button class="btn sm" id="pDup">Duplicar</button><button class="btn sm" id="pCenter">Centralizar</button>
+      <button class="btn sm danger" id="pDel" ${l.protected ? 'disabled' : ''}>Excluir</button><button class="btn sm" id="pDone">Concluir</button></div>`;
+  if (l.type === 'link') {
+    p.innerHTML = `<span class="label">Lugar do adesivo de link</span>
+      <p class="note">Só aparece no editor e na prévia. Mostra onde a influencer deve colocar o adesivo de link do Instagram. Não sai na imagem exportada.</p>${acts}`;
+  } else if (l.type === 'image') {
+    p.innerHTML = `<span class="label">Imagem</span>
+      <label class="btn sm filebtn">Trocar imagem<input type="file" id="pImg" accept="image/*"></label>
+      <label class="field"><span>Opacidade</span><input type="range" id="pOp" min="0.1" max="1" step="0.05" value="${l.opacity ?? 1}"></label>${common}${acts}`;
+    $('#pImg').onchange = async e => { const f = e.target.files[0]; if (!f) return; pushUndo(true); const id = await saveImageFile(f), i = loaded.get(id);
+      l.imageId = id; l.h = l.w * i.naturalHeight / i.naturalWidth; changed(); };
+    bind('pOp', t => l.opacity = +t.value);
+  } else {
+    const fopts = FONTS.map(([f, n]) => `<option value="${f}" ${l.font === f ? 'selected' : ''}>${n}</option>`).join('');
+    const wopts = [[400, 'Normal'], [600, 'Médio'], [700, 'Negrito'], [800, 'Extra']].map(([w, n]) => `<option value="${w}" ${+l.weight === w ? 'selected' : ''}>${n}</option>`).join('');
+    p.innerHTML = `<span class="label">${l.protected ? 'Selo de publicidade' : 'Texto'}</span>
+      ${l.protected ? '<p class="note">Identificação de publicidade. Pode mudar o texto (ex.: Publi, #publi), a cor e o lugar, mas não excluir.</p>' : ''}
+      <label class="field"><span>Texto — use {nome} e {link}</span><textarea id="pText">${esc(l.text)}</textarea></label>
+      <div class="grid2"><label class="field"><span>Fonte</span><select id="pFont">${fopts}</select></label>
+        <label class="field"><span>Peso</span><select id="pW">${wopts}</select></label></div>
+      <label class="field"><span>Tamanho (<b id="pSizeV">${l.size}</b> px)</span><input type="range" id="pSize" min="${l.protected ? 24 : 16}" max="220" step="1" value="${l.size}"></label>
+      <div class="field"><span>Alinhamento</span><div class="seg" id="pAlign">
+        ${[['left', 'Esquerda'], ['center', 'Centro'], ['right', 'Direita']].map(([a, n]) => `<button data-a="${a}" aria-pressed="${l.align === a}">${n}</button>`).join('')}</div></div>
+      <div class="row"><label class="field"><span>Cor</span><input type="color" id="pColor" value="${l.color}"></label>
+        <label class="field" style="flex:1"><span>Fundo</span><select id="pBg">
+          <option value="none" ${l.bg === 'none' ? 'selected' : ''}>Sem fundo</option>
+          <option value="block" ${l.bg === 'block' ? 'selected' : ''}>Bloco</option>
+          <option value="pill" ${l.bg === 'pill' ? 'selected' : ''}>Pílula por linha</option></select></label></div>
+      ${l.bg !== 'none' ? `<div class="row"><label class="field"><span>Cor do fundo</span><input type="color" id="pBgC" value="${l.bgColor}"></label>
+        <label class="field" style="flex:1"><span>Opacidade do fundo</span><input type="range" id="pBgO" min="0.1" max="1" step="0.05" value="${l.bgOpacity}"></label></div>`
+        : `<label class="check"><input type="checkbox" id="pSh" ${l.shadow ? 'checked' : ''}> Sombra no texto</label>`}
+      ${common}${acts}`;
+    bind('pText', t => { l.text = t.value; if (l.protected && !t.value.trim()) l.text = 'Publicidade'; renderLayersSoon(); });
+    bind('pFont', t => l.font = t.value, 'change'); bind('pW', t => l.weight = +t.value, 'change');
+    bind('pSize', t => { l.size = +t.value; $('#pSizeV').textContent = t.value; });
+    bind('pColor', t => l.color = t.value); bind('pBgC', t => l.bgColor = t.value); bind('pBgO', t => l.bgOpacity = +t.value);
+    bind('pSh', t => l.shadow = t.checked, 'change');
+    $('#pBg').onchange = e => { pushUndo(true); l.bg = e.target.value; changed(); renderPanel(); };
+    $('#pAlign').querySelectorAll('button').forEach(b => b.onclick = () => { pushUndo(true); l.align = b.dataset.a; changed(); renderPanel(); });
+  }
+  bind('pRot', t => { l.rot = +t.value; t.previousElementSibling.textContent = `Girar (${t.value}°)`; });
+  $('#pDup').onclick = () => {
+    if (l.type === 'link') { toast('Cada story tem um só lugar de link.'); return; }
+    pushUndo(true); const c = JSON.parse(JSON.stringify(l)); c.id = uid(); c.x += 40; c.y += 40; delete c.protected;
+    curStory().layers.push(c); E.sel = c.id; changed(); renderPanel(); renderLayers();
+  };
+  $('#pCenter').onclick = () => { pushUndo(true); l.x = 540; changed(); };
+  $('#pDel').onclick = () => deleteLayer(l);
+  $('#pDone').onclick = () => { E.sel = null; renderPanel(); renderLayers(); draw(); };
+}
+let rlT; function renderLayersSoon() { clearTimeout(rlT); rlT = setTimeout(renderLayers, 300); }
+function moveStory(dir) {
+  const a = E.tpl.stories, j = E.si + dir; if (j < 0 || j >= a.length) return;
+  pushUndo(true); [a[E.si], a[j]] = [a[j], a[E.si]]; E.si = j; changed(); renderEditor();
+}
+window.addEventListener('resize', () => current === 'editor' && draw());
+
+/* ---------------- gerar ---------------- */
+const G = { tplId: null, nome: '', link: '', photoId: null, adj: {}, files: null, extra: null };
+function adjFor(st) { return G.adj[st.id] ||= { zoom: 1, ox: 0, oy: 0, photoId: null }; }
+async function renderGerar() {
+  const list = await allTemplates(), sel = $('#gTpl');
+  if (!list.length) { sel.innerHTML = '<option>Crie um modelo primeiro</option>'; $('#gPreviews').innerHTML = '<div class="empty">Nenhum modelo salvo.</div>'; return; }
+  if (!list.some(t => t.id === G.tplId)) G.tplId = list[0].id;
+  sel.innerHTML = list.map(t => `<option value="${t.id}" ${t.id === G.tplId ? 'selected' : ''}>${esc(t.name)} (${t.stories.length} stories)</option>`).join('');
+  $('#gNome').value = G.nome; $('#gLink').value = G.link;
+  $('#gFotoInfo').textContent = G.photoId ? 'Foto escolhida. Toque de novo para trocar.' : 'Nenhuma foto escolhida. A foto vai para todos os stories com fundo de foto.';
+  G.tpl = list.find(t => t.id === G.tplId);
+  renderPreviews(); renderOuts();
+}
+function gVals() { return { nome: G.nome || 'Nome', link: G.link }; }
+function drawPreview(c, st) {
+  const a = adjFor(st), ctx = c.getContext('2d');
+  ctx.setTransform(c.width / W, 0, 0, c.height / H, 0, 0);
+  drawStory(ctx, st, { photoId: a.photoId || G.photoId, adj: a, vals: gVals(), guides: $('#gGuide').checked, editor: true, redraw: () => drawPreview(c, st) });
+}
+function renderPreviews() {
+  const box = $('#gPreviews'); box.innerHTML = '';
+  G.tpl.stories.forEach((st, i) => {
+    const a = adjFor(st), card = document.createElement('div'); card.className = 'pv';
+    const isFoto = st.mode !== 'pronta';
+    card.innerHTML = `<div class="t"><span>${String(i + 1).padStart(2, '0')}</span><span class="tag">${isFoto ? 'Foto' : 'Imagem pronta'}</span></div>
+      <canvas width="540" height="960"></canvas>
+      ${isFoto ? `<label class="field"><span>Zoom</span><input type="range" min="1" max="3" step="0.01" value="${a.zoom}"></label>
+      <div class="grid2"><button class="btn sm" data-a="c">Centralizar</button><label class="btn sm filebtn">Outra foto<input type="file" accept="image/*"></label></div>` : ''}`;
+    const c = card.querySelector('canvas'); drawPreview(c, st);
+    if (isFoto) {
+      const photo = () => loaded.get(a.photoId || G.photoId);
+      card.querySelector('input[type=range]').oninput = e => { a.zoom = +e.target.value; clampAdj(photo(), a); stale(); drawPreview(c, st); };
+      card.querySelector('[data-a=c]').onclick = () => { a.ox = a.oy = 0; stale(); drawPreview(c, st); };
+      card.querySelector('input[type=file]').onchange = async e => { const f = e.target.files[0]; if (!f) return; a.photoId = await saveImageFile(f); a.ox = a.oy = 0; stale(); drawPreview(c, st); };
+      let d = null;
+      c.onpointerdown = e => { d = { x: e.clientX, y: e.clientY, ox: a.ox, oy: a.oy }; c.setPointerCapture(e.pointerId); };
+      c.onpointermove = e => { if (!d) return; const k = W / c.clientWidth; a.ox = d.ox + (e.clientX - d.x) * k; a.oy = d.oy + (e.clientY - d.y) * k; clampAdj(photo(), a); drawPreview(c, st); };
+      c.onpointerup = c.onpointercancel = () => { if (d) stale(); d = null; };
+      c.onwheel = e => { e.preventDefault(); a.zoom = clamp(a.zoom - e.deltaY * 0.002, 1, 3); card.querySelector('input[type=range]').value = a.zoom; clampAdj(photo(), a); stale(); drawPreview(c, st); };
+    }
+    box.appendChild(card);
+  });
+}
+function stale() { if (G.files) { G.files = null; renderOuts(); } }
+function redrawPreviews() { document.querySelectorAll('#gPreviews canvas').forEach((c, i) => drawPreview(c, G.tpl.stories[i])); }
+$('#gTpl').onchange = e => { G.tplId = e.target.value; G.adj = {}; G.files = null; renderGerar(); };
+$('#gNome').oninput = e => { G.nome = e.target.value; stale(); redrawPreviews(); };
+$('#gLink').oninput = e => { G.link = e.target.value.trim(); stale(); redrawPreviews(); };
+$('#gGuide').onchange = redrawPreviews;
+$('#gFoto').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  G.photoId = await saveImageFile(f); Object.values(G.adj).forEach(a => { a.ox = a.oy = 0; a.zoom = 1; }); stale();
+  $('#gFotoInfo').textContent = 'Foto aplicada em todos os stories. Ajuste cada um abaixo.'; renderPreviews();
+};
+
+async function generateFiles(tpl, opts) {
+  const v = { nome: opts.nome || '', link: opts.link || '' }, out = [], base = slug(opts.nome);
+  for (let i = 0; i < tpl.stories.length; i++) {
+    const st = tpl.stories[i], a = opts.adj?.[st.id] || { zoom: 1, ox: 0, oy: 0 }, photoId = a.photoId || opts.photoId;
+    await Promise.all(storyImageIds(st, [photoId]).map(loadImg)); await fontsFor(st, v);
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    drawStory(c.getContext('2d'), st, { photoId, adj: a, vals: v, guides: false, showRef: false, editor: false });
+    const blob = await new Promise(r => c.toBlob(r, 'image/png')); c.width = c.height = 1;
+    out.push({ name: `${String(i + 1).padStart(2, '0')}_${base}.png`, blob });
+  }
+  return out;
+}
+$('#gPrep').onclick = async () => {
+  if (!G.nome.trim()) { toast('Escreva o nome da influencer.'); $('#gNome').focus(); return; }
+  const needPhoto = G.tpl.stories.some(s => s.mode !== 'pronta' && !adjFor(s).photoId);
+  if (needPhoto && !G.photoId) { toast('Escolha a foto da influencer.'); return; }
+  $('#busy').hidden = false;
+  try {
+    G.files = await generateFiles(G.tpl, G);
+    const h = { id: uid(), date: Date.now(), templateId: G.tpl.id, templateName: G.tpl.name, nome: G.nome.trim(), link: G.link,
+      photoId: G.photoId, adj: JSON.parse(JSON.stringify(G.adj)), files: G.files.map(f => f.name), extra: G.extra || null };
+    await DB.put('history', h);
+    if (typeof GeradorStories.onExport === 'function') { try { GeradorStories.onExport(h, G.files); } catch (e) { console.error(e); } }
+    renderOuts(); toast('Imagens prontas e salvas no histórico');
+  } catch (e) { console.error(e); toast('Não consegui gerar as imagens. Tente uma foto menor.'); }
+  finally { $('#busy').hidden = true; }
+};
+function canShareFiles(files) { try { return !!(navigator.canShare && navigator.canShare({ files })); } catch (e) { return false; } }
+function renderOuts() {
+  const box = $('#gOuts'); box.innerHTML = ''; document.querySelectorAll('#gOuts img').forEach(i => URL.revokeObjectURL(i.src));
+  const has = !!G.files; $('#gZip').hidden = !has;
+  $('#gPrep').textContent = has ? 'Preparar de novo' : 'Preparar imagens';
+  $('#gPrepInfo').textContent = has ? 'Prontas. Compartilhe ou baixe abaixo.' : 'Ao preparar, a sequência fica salva no histórico.';
+  const files = has ? G.files.map(f => new File([f.blob], f.name, { type: 'image/png' })) : [];
+  $('#gShare').hidden = !(has && canShareFiles(files));
+  if (!has) return;
+  G.files.forEach(f => {
+    const d = document.createElement('div'); d.className = 'out';
+    d.innerHTML = `<img alt="${esc(f.name)}" src="${URL.createObjectURL(f.blob)}"><span>${esc(f.name)}</span><button class="btn sm">Baixar</button>`;
+    d.querySelector('button').onclick = () => download(f.blob, f.name); box.appendChild(d);
+  });
+}
+$('#gShare').onclick = async () => {
+  const files = G.files.map(f => new File([f.blob], f.name, { type: 'image/png' }));
+  try { await navigator.share({ files }); } catch (e) { if (e.name !== 'AbortError') toast('O compartilhamento não abriu. Use Baixar.'); }
+};
+$('#gZip').onclick = async () => {
+  if (!window.JSZip) { toast('Sem conexão para montar o .zip. Baixe uma a uma.'); return; }
+  const z = new JSZip(); G.files.forEach(f => z.file(f.name, f.blob));
+  download(await z.generateAsync({ type: 'blob' }), `${slug(G.nome)}_stories.zip`);
+};
+
+/* ---------------- histórico ---------------- */
+async function renderHist() {
+  const list = (await DB.all('history')).sort((a, b) => b.date - a.date), box = $('#histList'), tpls = await DB.all('templates');
+  if (!list.length) { box.innerHTML = '<div class="empty">Nada gerado ainda. As sequências aparecem aqui quando você prepara as imagens em <b>Gerar</b>.</div>'; return; }
+  box.innerHTML = '';
+  for (const h of list) {
+    const t = tpls.find(x => x.id === h.templateId), r = document.createElement('div'); r.className = 'hrow';
+    const d = new Date(h.date);
+    r.innerHTML = `<canvas></canvas><div style="min-width:0"><div class="who">${esc(h.nome)}</div>
+      <div class="small muted">${esc(h.templateName)}${t ? '' : ' (modelo excluído)'} · ${h.files.length} imagens</div>
+      <div class="small muted when">${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}${h.link ? ' · ' + esc(h.link) : ''}</div></div>
+      <div class="row"><button class="btn sm" data-a="o" ${t ? '' : 'disabled'}>Abrir de novo</button><button class="btn sm danger" data-a="d">Excluir</button></div>`;
+    if (t) { const st = t.stories[0], a = h.adj?.[st.id]; const c = r.querySelector('canvas'); c.width = 216; c.height = 384;
+      const dr = () => { const x = c.getContext('2d'); x.setTransform(216 / W, 0, 0, 384 / H, 0, 0); drawStory(x, st, { photoId: a?.photoId || h.photoId, adj: a, vals: { nome: h.nome, link: h.link }, redraw: dr }); }; dr(); }
+    r.querySelector('[data-a=o]').onclick = () => { Object.assign(G, { tplId: h.templateId, nome: h.nome, link: h.link || '', photoId: h.photoId, adj: JSON.parse(JSON.stringify(h.adj || {})), files: null, extra: h.extra }); show('gerar'); };
+    r.querySelector('[data-a=d]').onclick = async () => { if (await ask(`Excluir do histórico a sequência de ${h.nome}?`)) { await DB.del('history', h.id); renderHist(); } };
+    box.appendChild(r);
+  }
+}
+
+/* ---------------- backup ---------------- */
+const blobToDataURL = b => new Promise(r => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(b); });
+$('#btnBackup').onclick = async () => {
+  const tpls = await DB.all('templates'); if (!tpls.length) { toast('Não há modelos para exportar.'); return; }
+  $('#busy').hidden = false;
+  try {
+    const ids = new Set(); tpls.forEach(t => { t.sampleImageId && ids.add(t.sampleImageId); t.stories.forEach(s => { storyImageIds(s).forEach(i => ids.add(i)); s.refImageId && ids.add(s.refImageId); }); });
+    const images = {}; for (const id of ids) { const r = await DB.get('images', id); if (r) images[id] = await blobToDataURL(r.blob); }
+    const data = { app: 'gerador-stories', version: 1, exportedAt: new Date().toISOString(), templates: tpls, images };
+    download(new Blob([JSON.stringify(data)], { type: 'application/json' }), `backup-modelos-${new Date().toISOString().slice(0, 10)}.json`);
+  } finally { $('#busy').hidden = true; }
+};
+$('#inImport').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const data = JSON.parse(await f.text()); if (data.app !== 'gerador-stories') throw new Error('formato');
+    for (const [id, url] of Object.entries(data.images || {})) { const blob = await (await fetch(url)).blob(); await DB.put('images', { id, blob }); }
+    for (const t of data.templates || []) await DB.put('templates', t);
+    toast(`${(data.templates || []).length} modelos importados`); renderTplList();
+  } catch (err) { toast('Arquivo inválido. Use um backup exportado por este app.'); }
+};
+
+/* ---------------- exemplo inicial ---------------- */
+async function seedExample() {
+  let seeded = false; try { seeded = localStorage.getItem('gs-seeded') === '1'; } catch (e) {}
+  if (seeded || (await DB.all('templates')).length) return;
+  const c = document.createElement('canvas'); c.width = 900; c.height = 1600; const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 900, 1600); g.addColorStop(0, '#c98aa6'); g.addColorStop(1, '#3b2a4a'); x.fillStyle = g; x.fillRect(0, 0, 900, 1600);
+  x.fillStyle = 'rgba(255,255,255,.25)'; x.beginPath(); x.arc(450, 620, 210, 0, 7); x.fill(); x.beginPath(); x.ellipse(450, 1250, 380, 420, 0, 0, 7); x.fill();
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.9)), sampleId = uid();
+  await DB.put('images', { id: sampleId, blob });
+  const t = newTemplate('Exemplo · Indicação em 3 stories'); t.sampleImageId = sampleId; t.previewName = 'Ana';
+  t.stories = [newStory(), newStory(), newStory()];
+  t.stories[0].layers.push(textLayer({ text: 'Oi, gente! Aqui é a {nome}', bg: 'pill', bgColor: '#ffffff', color: '#6d1233', font: 'Poppins', weight: 600, size: 58, y: 1180 }),
+    textLayer({ text: 'Quero mostrar uma coisa que eu tô usando', y: 1330, size: 56 }));
+  t.stories[1].layers.push(textLayer({ text: 'Vou contar tudo nos próximos stories', y: 1350, size: 60 }));
+  t.stories[2].layers.push(textLayer({ text: 'O link tá aqui embaixo', y: 1300, size: 62 }), Object.assign(linkLayer(), { y: 1450 }));
+  await DB.put('templates', t);
+  try { localStorage.setItem('gs-seeded', '1'); } catch (e) {}
+}
+
+/* ---------------- API para integrar com outro app ---------------- */
+window.GeradorStories = {
+  /** Lista os modelos salvos: [{id, name, stories}] */
+  listarModelos: () => allTemplates(),
+  /** Abre a tela Gerar já preenchida. extra = dados do seu app (ex.: {influencerId, etapa}) — vai junto no histórico. */
+  async abrirGerar({ modeloId, nome = '', link = '', foto = null, extra = null } = {}) {
+    Object.assign(G, { tplId: modeloId || G.tplId, nome, link, adj: {}, files: null, extra });
+    if (foto) G.photoId = await saveImageFile(foto);
+    show('gerar');
+  },
+  /** Gera sem interface. Retorna [{name, blob}] em 1080x1920. */
+  async gerar({ modeloId, nome, link = '', foto }) {
+    const tpl = await DB.get('templates', modeloId); if (!tpl) throw new Error('Modelo não encontrado');
+    const photoId = foto ? await saveImageFile(foto) : null;
+    return generateFiles(tpl, { nome, link, photoId, adj: {} });
+  },
+  listarHistorico: () => DB.all('history'),
+  /** Defina uma função para receber cada exportação: (registroDoHistorico, arquivos) => {} */
+  onExport: null
+};
+
+(async () => { await DB.open(); await seedExample(); show('modelos'); document.fonts && document.fonts.ready.then(() => current === 'editor' && draw()); })();
+</script>
+</body>
+</html>
