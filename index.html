@@ -216,6 +216,7 @@ input[type=range]{width:100%;accent-color:var(--accent);height:32px}
         <div class="toolbar">
           <button class="btn sm" id="addText">+ Texto</button>
           <label class="btn sm filebtn">+ Imagem<input type="file" id="inLayerImg" accept="image/*"></label>
+          <button class="btn sm" id="addFrame">+ Quadro de foto</button>
           <button class="btn sm" id="addLink">+ Lugar do link</button>
           <button class="btn sm on" id="tgRef" aria-pressed="true">Referência</button>
           <button class="btn sm on" id="tgSafe" aria-pressed="true">Áreas seguras</button>
@@ -285,6 +286,7 @@ input[type=range]{width:100%;accent-color:var(--accent);height:32px}
     <li>Com nenhuma camada selecionada, toque em <b>Enviar sobreposição</b> e escolha seus prints. Escolha os 3 de uma vez: o 1º vai no story 1, o 2º no story 2, o 3º no story 3. Se o print tiver fundo preto, o app apaga o fundo sozinho.</li>
     <li>A sobreposição fica <b>travada</b>: você toca no story e ela não sai do lugar. Para mexer, selecione na lista de <b>Camadas</b> e toque em <b>Destravar posição</b>.</li>
     <li>Quer mudar algo do print de lugar? Toque no <b>🔒</b> da sobreposição na lista de <b>Camadas</b> para destravar, depois em <b>✂️ Recortar um pedaço</b>. Marque o pedaço com o dedo e escolha <b>Separar pedaço</b> (vira uma camada que você arrasta) ou <b>Apagar pedaço</b>.</li>
+    <li>Quer trocar só uma foto dentro do print (ex.: a miniatura do jogo)? Toque em <b>+ Quadro de foto</b>, coloque o quadro em cima da foto antiga e ajuste o tamanho. Escolha a foto do quadro: ela é recortada sozinha para caber. Use <b>Mover a foto dentro do quadro</b> e o <b>Zoom</b> para enquadrar. Na hora de gerar, cada quadro tem o botão <b>Trocar foto</b>.</li>
     <li>Para legendas novas, toque em <b>+ Texto</b> e escolha um <b>Estilo Instagram</b> (Clássica, com fundo, Moderna, Neon, Máquina, Forte). Escreva <b>{nome}</b> onde o nome da influencer deve aparecer.</li>
     <li>Toque em <b>+ Lugar do link</b> e arraste a caixa amarela até onde o adesivo de link deve ficar. Ela não sai na imagem final.</li>
     <li>As faixas azuis em cima e embaixo são as partes que o Instagram cobre. Evite colocar coisas importantes ali.</li>
@@ -522,6 +524,7 @@ function drawStory(ctx, st, o) {
     if (l.type === 'link') { if (o.guides) drawLinkMark(ctx, l); continue; }
     ctx.save(); ctx.translate(l.x, l.y); ctx.rotate((l.rot || 0) * Math.PI / 180); ctx.globalAlpha = l.opacity ?? 1;
     if (l.type === 'image') { const i = img(l.imageId, o.redraw); if (i) ctx.drawImage(i, -l.w / 2, -l.h / 2, l.w, l.h); }
+    else if (l.type === 'frame') drawFrame(ctx, l, o);
     else drawText(ctx, l, o.vals, o.redraw);
     ctx.restore();
   }
@@ -557,8 +560,30 @@ function drawSel(ctx, l, o) {
   dot(l.w / 2, h / 2, '⤡'); dot(0, -h / 2 - 34 * hs, '↻');
   ctx.restore();
 }
+/* quadro de foto: a imagem é recortada e ajustada sozinha para preencher o quadro */
+const DEF_FIT = { zoom: 1, ox: 0, oy: 0 };
+function frameImgId(l, o) { const fr = o.frames && o.frames[l.id]; return (fr && fr.imageId) || (l.useInfluencer ? o.photoId : null) || l.imageId; }
+function frameFit(l, o) { const fr = o.frames && o.frames[l.id]; return (fr && fr.zoom != null) ? fr : (l.fit || DEF_FIT); }
+function frameRect(i, l, fit) {
+  const s = Math.max(l.w / i.naturalWidth, l.h / i.naturalHeight) * (fit.zoom || 1), w = i.naturalWidth * s, h = i.naturalHeight * s;
+  return { x: -w / 2 + (fit.ox || 0), y: -h / 2 + (fit.oy || 0), w, h };
+}
+function clampFit(i, l, fit) {
+  if (!i) return fit; const s = Math.max(l.w / i.naturalWidth, l.h / i.naturalHeight) * fit.zoom;
+  const mx = (i.naturalWidth * s - l.w) / 2, my = (i.naturalHeight * s - l.h) / 2;
+  fit.ox = clamp(fit.ox, -mx, mx); fit.oy = clamp(fit.oy, -my, my); return fit;
+}
+function drawFrame(ctx, l, o) {
+  const i = img(frameImgId(l, o), o.redraw), r = Math.min(l.radius || 0, l.w / 2, l.h / 2);
+  if (i) { ctx.save(); rrect(ctx, -l.w / 2, -l.h / 2, l.w, l.h, r); ctx.clip(); const q = frameRect(i, l, frameFit(l, o)); ctx.drawImage(i, q.x, q.y, q.w, q.h); ctx.restore(); }
+  else if (o.editor) {
+    ctx.fillStyle = 'rgba(255,255,255,.16)'; rrect(ctx, -l.w / 2, -l.h / 2, l.w, l.h, r); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 4; ctx.setLineDash([16, 10]); rrect(ctx, -l.w / 2, -l.h / 2, l.w, l.h, r); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#fff'; ctx.font = `600 ${clamp(l.w / 9, 16, 34)}px Figtree, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('Quadro de foto', 0, 0);
+  }
+}
 function storyImageIds(st, extra = []) {
-  return [st.mode === 'pronta' ? st.bgImageId : null, ...st.layers.filter(l => l.type === 'image').map(l => l.imageId), ...extra].filter(Boolean);
+  return [st.mode === 'pronta' ? st.bgImageId : null, ...st.layers.filter(l => l.type === 'image' || l.type === 'frame').map(l => l.imageId), ...extra].filter(Boolean);
 }
 async function fontsFor(st, vals) {
   if (!document.fonts) return;
@@ -627,6 +652,7 @@ const cv = $('#edCanvas'), cctx = cv.getContext('2d');
 const curStory = () => E.tpl.stories[E.si];
 const selLayer = () => E.sel && curStory().layers.find(l => l.id === E.sel);
 const vals = () => ({ nome: E.tpl.previewName || 'Ana', link: 'seulink.com' });
+const edO = () => ({ photoId: E.tpl.sampleImageId });
 
 async function openEditor(id) {
   E.tpl = await DB.get('templates', id); E.si = 0; E.sel = null; E.undo = []; E.redo = [];
@@ -684,6 +710,11 @@ $('#edUse').onclick = async () => { await saveNow(); G.tplId = E.tpl.id; G.adj =
 
 /* adicionar camadas */
 $('#addText').onclick = () => { pushUndo(true); const l = textLayer(Object.assign({ text: 'Toque para editar', size: 72 }, IG_STYLES[0][1], { color: '#ffffff' })); curStory().layers.push(l); E.sel = l.id; changed(); renderPanel(); renderLayers(); };
+$('#addFrame').onclick = () => {
+  pushUndo(true); const n = curStory().layers.filter(x => x.type === 'frame').length + 1;
+  const l = { id: uid(), type: 'frame', label: 'Quadro ' + n, x: 540, y: 960, w: 300, h: 420, rot: 0, radius: 24, imageId: null, fit: { ...DEF_FIT }, slot: true, useInfluencer: false };
+  curStory().layers.push(l); E.sel = l.id; changed(); renderPanel(); renderLayers();
+};
 $('#addLink').onclick = () => {
   const ex = curStory().layers.find(l => l.type === 'link');
   if (ex) { E.sel = ex.id; toast('Este story já tem o lugar do link. Arraste para posicionar.'); }
@@ -709,6 +740,15 @@ function toLocal(p, l) { const dx = p.x - l.x, dy = p.y - l.y, a = -(l.rot || 0)
 cv.addEventListener('pointerdown', e => {
   const p = toStory(e, cv), hs = W / cv.clientWidth, st = curStory(), v = vals();
   if (E.crop) { E.crop.a = p; E.crop.b = p; E.crop.dragging = true; cv.setPointerCapture(e.pointerId); draw(); e.preventDefault(); return; }
+  const fs = selLayer();
+  if (E.fitMode && fs && fs.type === 'frame') {
+    const loc = toLocal(p, fs);
+    if (Math.abs(loc.x) <= fs.w / 2 && Math.abs(loc.y) <= fs.h / 2) {
+      fs.fit ||= { ...DEF_FIT };
+      E.drag = { mode: 'fit', p0: p, l0: JSON.parse(JSON.stringify(fs)), moved: false, before: JSON.stringify(E.tpl.stories) };
+      cv.setPointerCapture(e.pointerId); e.preventDefault(); return;
+    }
+  }
   let mode = null, l = selLayer();
   if (l && !l.locked) {
     const loc = toLocal(p, l), h = layerH(l, v), R = 30 * hs;
@@ -736,12 +776,17 @@ cv.addEventListener('pointermove', e => {
   const p = toStory(e, cv), hs = W / cv.clientWidth, o = d.l0;
   if (!d.moved && Math.hypot(p.x - d.p0.x, p.y - d.p0.y) < 4 * hs) return;
   d.moved = true; E.snap = null;
-  if (d.mode === 'move') {
+  if (d.mode === 'fit') {
+    const a = -(l.rot || 0) * Math.PI / 180, dx = p.x - d.p0.x, dy = p.y - d.p0.y;
+    l.fit.ox = o.fit.ox + dx * Math.cos(a) - dy * Math.sin(a); l.fit.oy = o.fit.oy + dx * Math.sin(a) + dy * Math.cos(a);
+    clampFit(img(frameImgId(l, edO())), l, l.fit);
+  } else if (d.mode === 'move') {
     let x = o.x + p.x - d.p0.x, y = o.y + p.y - d.p0.y; const sn = {};
     if (Math.abs(x - 540) < 14 * hs) { x = 540; sn.x = 1; } if (Math.abs(y - 960) < 14 * hs) { y = 960; sn.y = 1; }
     l.x = Math.round(x); l.y = Math.round(y); E.snap = (sn.x || sn.y) ? sn : null;
   } else if (d.mode === 'resize') {
-    if (l.type === 'link') { const loc = toLocal(p, l); l.w = Math.max(120, Math.round(Math.abs(loc.x) * 2)); l.h = Math.max(60, Math.round(Math.abs(loc.y) * 2)); }
+    if (l.type === 'link' || l.type === 'frame') { const loc = toLocal(p, l), m = l.type === 'frame' ? 40 : 60;
+      l.w = Math.max(m * 2, Math.round(Math.abs(loc.x) * 2)); l.h = Math.max(m, Math.round(Math.abs(loc.y) * 2)); if (l.type === 'frame') clampFit(img(frameImgId(l, edO())), l, l.fit); }
     else {
       const k = Math.max(0.05, Math.hypot(p.x - l.x, p.y - l.y) / d.d0);
       if (l.type === 'image') { l.w = Math.max(20, o.w * k); l.h = Math.max(20, o.h * k); }
@@ -776,6 +821,7 @@ function deleteLayer(l) {
 /* camadas */
 function layerName(l) {
   if (l.type === 'link') return ['LINK', 'Lugar do adesivo de link'];
+  if (l.type === 'frame') return ['QUADRO', l.label || 'Quadro de foto'];
   if (l.type === 'image') return [l.overlay ? 'SOBREP' : 'IMG', (l.overlay ? 'Sobreposição' : 'Imagem') + (l.locked ? ' 🔒' : '')];
   return [l.protected ? 'PUBLI' : 'TEXTO', (l.text || '').split('\n')[0] || '(vazio)'];
 }
@@ -803,6 +849,7 @@ function bind(id, fn, ev = 'input') { const el = document.getElementById(id); if
 function renderPanel() {
   const p = $('#propPanel'), l = selLayer(), st = curStory();
   if (E.crop && (!l || l.id !== E.crop.layerId)) E.crop = null;
+  if (E.fitMode && (!l || l.type !== 'frame')) E.fitMode = false;
   if (!l) {
     const hasOv = st.layers.some(x => x.overlay);
     p.innerHTML = `<span class="label">Story ${E.si + 1} de ${E.tpl.stories.length}</span>
@@ -848,6 +895,26 @@ function renderPanel() {
   if (l.type === 'link') {
     p.innerHTML = `<span class="label">Lugar do adesivo de link</span>
       <p class="note">Só aparece no editor e na prévia. Mostra onde a influencer deve colocar o adesivo de link do Instagram. Não sai na imagem exportada.</p>${acts}`;
+  } else if (l.type === 'frame') {
+    const z = (l.fit || DEF_FIT).zoom;
+    p.innerHTML = `<span class="label">Quadro de foto</span>
+      <p class="note">A foto é recortada e ajustada sozinha para preencher o quadro. Coloque o quadro em cima da foto antiga do print (ex.: a miniatura do jogo) e ajuste o tamanho no ● do canto.</p>
+      <label class="field"><span>Nome do quadro</span><input type="text" id="fLabel" value="${esc(l.label || '')}"></label>
+      <label class="btn sm filebtn">${l.imageId ? 'Trocar' : 'Escolher'} foto padrão do quadro<input type="file" id="fImg" accept="image/*"></label>
+      <label class="check"><input type="checkbox" id="fInf" ${l.useInfluencer ? 'checked' : ''}> Usar a foto da influencer neste quadro</label>
+      <label class="check"><input type="checkbox" id="fSlot" ${l.slot ? 'checked' : ''}> Poder trocar a foto na hora de gerar</label>
+      <button class="btn sm ${E.fitMode ? 'on' : ''}" id="fFit">${E.fitMode ? '✓ Arraste a foto no quadro · tocar para sair' : 'Mover a foto dentro do quadro'}</button>
+      <label class="field"><span>Zoom da foto</span><input type="range" id="fZoom" min="1" max="4" step="0.01" value="${z}"></label>
+      <label class="field"><span>Cantos arredondados</span><input type="range" id="fRad" min="0" max="200" step="1" value="${l.radius || 0}"></label>
+      ${common}${acts}`;
+    const fi = () => img(frameImgId(l, edO()));
+    $('#fLabel').oninput = e => { l.label = e.target.value; changed(); renderLayersSoon(); };
+    $('#fImg').onchange = async e => { const f = e.target.files[0]; if (!f) return; pushUndo(true); l.imageId = await saveImageFile(f); l.fit = { ...DEF_FIT }; changed(); renderPanel(); };
+    bind('fInf', t => { l.useInfluencer = t.checked; l.fit = { ...DEF_FIT }; }, 'change');
+    bind('fSlot', t => l.slot = t.checked, 'change');
+    $('#fFit').onclick = () => { E.fitMode = !E.fitMode; renderPanel(); };
+    bind('fZoom', t => { l.fit ||= { ...DEF_FIT }; l.fit.zoom = +t.value; clampFit(fi(), l, l.fit); });
+    bind('fRad', t => l.radius = +t.value);
   } else if (l.type === 'image' && E.crop) {
     const ok = E.crop.a && Math.abs(E.crop.b.x - E.crop.a.x) > 8 && Math.abs(E.crop.b.y - E.crop.a.y) > 8;
     p.innerHTML = `<span class="label">Recortar pedaço</span>
@@ -861,6 +928,8 @@ function renderPanel() {
   } else if (l.type === 'image') {
     p.innerHTML = `<span class="label">${l.overlay ? 'Sobreposição' : 'Imagem'}</span>
       ${l.locked ? '<p class="note">Travada: não sai do lugar quando você toca no story. Destrave para mover.</p>' : ''}
+      ${l.overlay ? `<div class="field"><span>Tamanho da sobreposição</span><div class="grid2">
+        <button class="btn sm" id="ovOrig">Original (sem esticar)</button><button class="btn sm" id="ovFull">Tela cheia</button></div></div>` : ''}
       <button class="btn sm ${l.locked ? 'on' : ''}" id="pLock">${l.locked ? '🔒 Destravar posição' : 'Travar posição'}</button>
       <div class="field"><span>Editar partes do print</span>
         <button class="btn sm" id="pCrop">✂️ Recortar um pedaço para mover ou apagar</button></div>
@@ -874,6 +943,9 @@ function renderPanel() {
     $('#pImg').onchange = async e => { const f = e.target.files[0]; if (!f) return; pushUndo(true); const id = await saveImageFile(f), i = loaded.get(id);
       l.imageId = id; delete l.srcImageId; l.h = l.w * i.naturalHeight / i.naturalWidth; changed(); renderPanel(); };
     $('#pTol').oninput = e => { l.bgTol = +e.target.value; };
+    const ovSize = full => { const i = loaded.get(l.imageId); if (!i) return; pushUndo(true);
+      const k = full ? W / i.naturalWidth : Math.min(1, W / i.naturalWidth); l.w = i.naturalWidth * k; l.h = i.naturalHeight * k; l.x = 540; l.y = 960; l.rot = 0; changed(); };
+    if ($('#ovOrig')) { $('#ovOrig').onclick = () => ovSize(false); $('#ovFull').onclick = () => ovSize(true); }
     $('#pLock').onclick = () => { pushUndo(true); l.locked = !l.locked; changed(); renderPanel(); renderLayers(); };
     $('#pRmBg').onclick = async () => {
       $('#busy').hidden = false;
@@ -944,7 +1016,7 @@ window.addEventListener('resize', () => current === 'editor' && draw());
 
 /* ---------------- gerar ---------------- */
 const G = { tplId: null, nome: '', link: '', photoId: null, adj: {}, files: null, extra: null };
-function adjFor(st) { return G.adj[st.id] ||= { zoom: 1, ox: 0, oy: 0, photoId: null }; }
+function adjFor(st) { const a = G.adj[st.id] ||= { zoom: 1, ox: 0, oy: 0, photoId: null }; a.frames ||= {}; return a; }
 async function renderGerar() {
   const list = await allTemplates(), sel = $('#gTpl');
   if (!list.length) { sel.innerHTML = '<option>Crie um modelo primeiro</option>'; $('#gPreviews').innerHTML = '<div class="empty">Nenhum modelo salvo.</div>'; return; }
@@ -961,23 +1033,50 @@ function drawPreview(c, st) {
   if (c.width !== tw) { c.width = tw; c.height = Math.round(tw * H / W); }
   const a = adjFor(st), ctx = c.getContext('2d');
   ctx.setTransform(c.width / W, 0, 0, c.height / H, 0, 0);
-  drawStory(ctx, st, { photoId: a.photoId || G.photoId, adj: a, vals: gVals(), guides: $('#gGuide').checked, editor: true, redraw: () => drawPreview(c, st) });
+  drawStory(ctx, st, { photoId: a.photoId || G.photoId, adj: a, frames: a.frames, vals: gVals(), guides: $('#gGuide').checked, editor: true, redraw: () => drawPreview(c, st) });
 }
 function renderPreviews() {
   const box = $('#gPreviews'); box.innerHTML = '';
   G.tpl.stories.forEach((st, i) => {
     const a = adjFor(st), card = document.createElement('div'); card.className = 'pv';
-    const isFoto = st.mode !== 'pronta';
+    const isFoto = st.mode !== 'pronta', slots = st.layers.filter(l => l.type === 'frame' && l.slot);
     card.innerHTML = `<div class="t"><span>${String(i + 1).padStart(2, '0')}</span><span class="tag">${isFoto ? 'Foto' : 'Imagem pronta'}</span></div>
       <canvas width="540" height="960"></canvas>
       ${isFoto ? `<label class="field"><span>Zoom</span><input type="range" min="1" max="3" step="0.01" value="${a.zoom}"></label>
-      <div class="grid2"><button class="btn sm" data-a="c">Centralizar</button><label class="btn sm filebtn">Outra foto<input type="file" accept="image/*"></label></div>` : ''}`;
+      <div class="grid2"><button class="btn sm" data-a="c">Centralizar</button><label class="btn sm filebtn">Outra foto<input type="file" accept="image/*" data-bg></label></div>` : ''}
+      ${slots.map(l => `<div class="field slot"><span>${esc(l.label || 'Quadro')}</span>
+        <div class="grid2"><label class="btn sm filebtn">Trocar foto<input type="file" accept="image/*" data-f="${l.id}"></label><button class="btn sm" data-r="${l.id}">Padrão</button></div>
+        <input type="range" min="1" max="4" step="0.01" value="${a.frames[l.id]?.zoom ?? (l.fit || DEF_FIT).zoom}" data-z="${l.id}" aria-label="Zoom do quadro"></div>`).join('')}`;
     const c = card.querySelector('canvas'); drawPreview(c, st);
+    const fo = () => ({ photoId: a.photoId || G.photoId, frames: a.frames });
+    const frOf = l => a.frames[l.id] ||= {}, ensureFit = fr => { if (fr.zoom == null) Object.assign(fr, { zoom: 1, ox: 0, oy: 0 }); return fr; };
+    slots.forEach(l => {
+      card.querySelector(`[data-f="${l.id}"]`).onchange = async e => { const f = e.target.files[0]; if (!f) return;
+        Object.assign(frOf(l), { imageId: await saveImageFile(f), zoom: 1, ox: 0, oy: 0 }); card.querySelector(`[data-z="${l.id}"]`).value = 1; stale(); drawPreview(c, st); };
+      card.querySelector(`[data-r="${l.id}"]`).onclick = () => { delete a.frames[l.id]; card.querySelector(`[data-z="${l.id}"]`).value = (l.fit || DEF_FIT).zoom; stale(); drawPreview(c, st); };
+      card.querySelector(`[data-z="${l.id}"]`).oninput = e => { const fr = frOf(l); if (fr.zoom == null) Object.assign(fr, { ...(l.fit || DEF_FIT) });
+        fr.zoom = +e.target.value; clampFit(img(frameImgId(l, fo())), l, fr); stale(); drawPreview(c, st); };
+    });
+    // arrastar: dentro de um quadro mexe a foto do quadro; fora, mexe a foto de fundo
+    let fd = null;
+    c.addEventListener('pointerdown', e => {
+      const p = toStory(e, c);
+      for (let k = slots.length - 1; k >= 0; k--) { const l = slots[k], loc = toLocal(p, l);
+        if (Math.abs(loc.x) <= l.w / 2 && Math.abs(loc.y) <= l.h / 2 && img(frameImgId(l, fo()))) {
+          const fr = frOf(l); if (fr.zoom == null) Object.assign(fr, { ...(l.fit || DEF_FIT) });
+          fd = { l, fr, x: e.clientX, y: e.clientY, ox: fr.ox, oy: fr.oy }; c.setPointerCapture(e.pointerId); e.stopImmediatePropagation(); return; } }
+    }, true);
+    c.addEventListener('pointermove', e => { if (!fd) return; e.stopImmediatePropagation(); const k = W / c.clientWidth, an = -(fd.l.rot || 0) * Math.PI / 180;
+      const dx = (e.clientX - fd.x) * k, dy = (e.clientY - fd.y) * k;
+      fd.fr.ox = fd.ox + dx * Math.cos(an) - dy * Math.sin(an); fd.fr.oy = fd.oy + dx * Math.sin(an) + dy * Math.cos(an);
+      clampFit(img(frameImgId(fd.l, fo())), fd.l, fd.fr); drawPreview(c, st); }, true);
+    const fup = e => { if (fd) { e.stopImmediatePropagation(); fd = null; stale(); } };
+    c.addEventListener('pointerup', fup, true); c.addEventListener('pointercancel', fup, true);
     if (isFoto) {
       const photo = () => loaded.get(a.photoId || G.photoId);
       card.querySelector('input[type=range]').oninput = e => { a.zoom = +e.target.value; clampAdj(photo(), a); stale(); drawPreview(c, st); };
       card.querySelector('[data-a=c]').onclick = () => { a.ox = a.oy = 0; stale(); drawPreview(c, st); };
-      card.querySelector('input[type=file]').onchange = async e => { const f = e.target.files[0]; if (!f) return; a.photoId = await saveImageFile(f); a.ox = a.oy = 0; stale(); drawPreview(c, st); };
+      card.querySelector('input[data-bg]').onchange = async e => { const f = e.target.files[0]; if (!f) return; a.photoId = await saveImageFile(f); a.ox = a.oy = 0; stale(); drawPreview(c, st); };
       let d = null;
       c.onpointerdown = e => { d = { x: e.clientX, y: e.clientY, ox: a.ox, oy: a.oy }; c.setPointerCapture(e.pointerId); };
       c.onpointermove = e => { if (!d) return; const k = W / c.clientWidth; a.ox = d.ox + (e.clientX - d.x) * k; a.oy = d.oy + (e.clientY - d.y) * k; clampAdj(photo(), a); drawPreview(c, st); };
@@ -1025,7 +1124,7 @@ async function addOverlays(files) {
       const id = hasTransparency(i) ? src : await removeBorderBg(src, 30);
       const full = Math.abs(i.naturalWidth / i.naturalHeight - 9 / 16) < 0.04;
       const layer = { id: uid(), type: 'image', overlay: true, locked: true, imageId: id, srcImageId: id !== src ? src : undefined, bgTol: 30,
-        x: 540, y: 960, w: W, h: full ? H : W * i.naturalHeight / i.naturalWidth, rot: 0, opacity: 1 };
+        x: 540, y: 960, w: i.naturalWidth * Math.min(1, W / i.naturalWidth), h: i.naturalHeight * Math.min(1, W / i.naturalWidth), rot: 0, opacity: 1 }; // sem esticar
       const old = st.layers.findIndex(x => x.overlay);
       if (old >= 0) st.layers[old] = layer; else st.layers.unshift(layer);
       st.mode = 'foto';
@@ -1103,9 +1202,9 @@ async function generateFiles(tpl, opts) {
   const v = { nome: opts.nome || '', link: opts.link || '' }, out = [], base = slug(opts.nome);
   for (let i = 0; i < tpl.stories.length; i++) {
     const st = tpl.stories[i], a = opts.adj?.[st.id] || { zoom: 1, ox: 0, oy: 0 }, photoId = a.photoId || opts.photoId;
-    await Promise.all(storyImageIds(st, [photoId]).map(loadImg)); await fontsFor(st, v);
+    await Promise.all(storyImageIds(st, [photoId, ...Object.values(a.frames || {}).map(f => f.imageId)]).map(loadImg)); await fontsFor(st, v);
     const c = document.createElement('canvas'); c.width = W; c.height = H;
-    drawStory(c.getContext('2d'), st, { photoId, adj: a, vals: v, guides: false, showRef: false, editor: false });
+    drawStory(c.getContext('2d'), st, { photoId, adj: a, frames: a.frames, vals: v, guides: false, showRef: false, editor: false });
     const blob = await new Promise(r => c.toBlob(r, 'image/png')); c.width = c.height = 1;
     out.push({ name: `${String(i + 1).padStart(2, '0')}_${base}.png`, blob });
   }
