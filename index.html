@@ -119,6 +119,22 @@ input[type=range]{width:100%;accent-color:var(--accent);height:32px}
 .lrow .ico{font-size:.7rem;font-weight:800;letter-spacing:.06em;color:var(--muted);width:42px}
 .lrow button{border:0;background:transparent;color:var(--fg);width:38px;height:38px;border-radius:8px;cursor:pointer;font-size:16px}
 .lrow button:hover{background:var(--surface-2)}
+.toolbar{display:flex;gap:10px 18px;flex-wrap:wrap;justify-content:center}
+.tgroup{display:flex;flex-direction:column;gap:4px;align-items:center}
+.tgroup .row{gap:6px;justify-content:center}
+#propPanel{gap:0;padding-top:12px}
+#propPanel>*+*{margin-top:12px}
+.ph{display:flex;flex-direction:column;gap:8px}
+.ph .back{align-self:flex-start}
+.sec{display:flex;flex-direction:column;gap:10px;padding-top:14px;border-top:1px solid var(--line)}
+.sec h4{margin:0;font:700 1rem var(--f-display)}
+details.more{border:1px solid var(--line);border-radius:12px;padding:0 12px;background:var(--surface)}
+details.more summary{min-height:48px;display:flex;align-items:center;font-weight:600;cursor:pointer;list-style:none;gap:8px}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary::after{content:"▾";margin-left:auto;color:var(--muted)}
+details.more[open] summary::after{content:"▴"}
+.more-b{display:flex;flex-direction:column;gap:12px;padding-bottom:14px}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-top:14px;border-top:1px solid var(--line)}
 .igs{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .igs button{min-height:44px;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);border-radius:10px;font-size:16px;cursor:pointer;padding:4px 6px}
 .igs button:hover{border-color:var(--accent)}
@@ -214,12 +230,14 @@ input[type=range]{width:100%;accent-color:var(--accent);height:32px}
       </div>
       <div class="stage">
         <div class="toolbar">
-          <button class="btn sm" id="addText">+ Texto</button>
-          <label class="btn sm filebtn">+ Imagem<input type="file" id="inLayerImg" accept="image/*"></label>
-          <button class="btn sm" id="addFrame">+ Quadro de foto</button>
-          <button class="btn sm" id="addLink">+ Lugar do link</button>
-          <button class="btn sm on" id="tgRef" aria-pressed="true">Referência</button>
-          <button class="btn sm on" id="tgSafe" aria-pressed="true">Áreas seguras</button>
+          <div class="tgroup"><span class="label">Adicionar</span><div class="row">
+            <button class="btn sm" id="addText">Texto</button>
+            <label class="btn sm filebtn">Imagem<input type="file" id="inLayerImg" accept="image/*"></label>
+            <button class="btn sm" id="addFrame">Quadro de foto</button>
+            <button class="btn sm" id="addLink">Lugar do link</button></div></div>
+          <div class="tgroup"><span class="label">Mostrar no editor</span><div class="row">
+            <button class="btn sm on" id="tgRef" aria-pressed="true">Molde</button>
+            <button class="btn sm on" id="tgSafe" aria-pressed="true">Áreas seguras</button></div></div>
         </div>
         <canvas id="edCanvas" width="1080" height="1920"></canvas>
         <p class="small muted" style="text-align:center">Toque numa camada para selecionar. Arraste para mover, ● canto para redimensionar, ↻ para girar.</p>
@@ -283,12 +301,12 @@ input[type=range]{width:100%;accent-color:var(--accent);height:32px}
   <h3>Parte 1 · Criar o modelo (uma vez só)</h3>
   <ol>
     <li>Em <b>Modelos</b>, toque em <b>+ Novo modelo</b> e dê um nome a ele no campo do topo.</li>
-    <li>Com nenhuma camada selecionada, toque em <b>Enviar sobreposição</b> e escolha seus prints. Escolha os 3 de uma vez: o 1º vai no story 1, o 2º no story 2, o 3º no story 3. Se o print tiver fundo preto, o app apaga o fundo sozinho.</li>
+    <li>Com nenhuma camada selecionada, em <b>2 · Sobreposição</b>, toque em <b>Enviar print</b> e escolha seus prints. Escolha os 3 de uma vez: o 1º vai no story 1, o 2º no story 2, o 3º no story 3. Se o print tiver fundo preto, o app apaga o fundo sozinho.</li>
     <li>A sobreposição fica <b>travada</b>: você toca no story e ela não sai do lugar. Para mexer, selecione na lista de <b>Camadas</b> e toque em <b>Destravar posição</b>.</li>
     <li>Quer mudar algo do print de lugar? Toque no <b>🔒</b> da sobreposição na lista de <b>Camadas</b> para destravar, depois em <b>✂️ Recortar um pedaço</b>. Marque o pedaço com o dedo e escolha <b>Separar pedaço</b> (vira uma camada que você arrasta) ou <b>Apagar pedaço</b>.</li>
-    <li>Quer trocar só uma foto dentro do print (ex.: a miniatura do jogo)? Toque em <b>+ Quadro de foto</b>, coloque o quadro em cima da foto antiga e ajuste o tamanho. Escolha a foto do quadro: ela é recortada sozinha para caber. Use <b>Mover a foto dentro do quadro</b> e o <b>Zoom</b> para enquadrar. Na hora de gerar, cada quadro tem o botão <b>Trocar foto</b>.</li>
-    <li>Para legendas novas, toque em <b>+ Texto</b> e escolha um <b>Estilo Instagram</b> (Clássica, com fundo, Moderna, Neon, Máquina, Forte). Escreva <b>{nome}</b> onde o nome da influencer deve aparecer.</li>
-    <li>Toque em <b>+ Lugar do link</b> e arraste a caixa amarela até onde o adesivo de link deve ficar. Ela não sai na imagem final.</li>
+    <li>Quer trocar só uma foto dentro do print (ex.: a miniatura do jogo)? Toque em <b>Quadro de foto</b>, coloque o quadro em cima da foto antiga e ajuste o tamanho. Escolha a foto do quadro: ela é recortada sozinha para caber. Use <b>Mover a foto dentro do quadro</b> e o <b>Zoom</b> para enquadrar. Na hora de gerar, cada quadro tem o botão <b>Trocar foto</b>.</li>
+    <li>Para legendas novas, toque em <b>Texto</b> e escolha um <b>Estilo Instagram</b> (Clássica, com fundo, Moderna, Neon, Máquina, Forte). Escreva <b>{nome}</b> onde o nome da influencer deve aparecer.</li>
+    <li>Toque em <b>Lugar do link</b> e arraste a caixa amarela até onde o adesivo de link deve ficar. Ela não sai na imagem final.</li>
     <li>As faixas azuis em cima e embaixo são as partes que o Instagram cobre. Evite colocar coisas importantes ali.</li>
     <li>O selo <b>Publicidade</b> vem em todo story. Você pode mudar o texto e o lugar dele.</li>
   </ol>
@@ -304,7 +322,7 @@ input[type=range]{width:100%;accent-color:var(--accent);height:32px}
   <ol>
     <li>Tudo fica salvo neste aparelho. Para levar os modelos para outro, use <b>Exportar backup</b> e <b>Importar backup</b>.</li>
     <li>Errou? Use <b>Desfazer</b> no editor.</li>
-    <li><b>Qualidade:</b> a imagem final sai em 1080×1920 sem perda. O que deixa borrado é o arquivo de origem: prints e fotos que passaram pelo WhatsApp perdem muita qualidade. Use o print original do celular (ou envie no WhatsApp como <b>Documento</b>). Textos criados no app com <b>+ Texto</b> saem sempre nítidos.</li>
+    <li><b>Qualidade:</b> a imagem final sai em 1080×1920 sem perda. O que deixa borrado é o arquivo de origem: prints e fotos que passaram pelo WhatsApp perdem muita qualidade. Use o print original do celular (ou envie no WhatsApp como <b>Documento</b>). Textos criados no app com <b>Texto</b> saem sempre nítidos.</li>
   </ol>
   <div class="row"><button class="btn primary" id="helpOk">Entendi</button></div>
 </div></div>
@@ -515,7 +533,7 @@ function drawStory(ctx, st, o) {
     const g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#4a2a3a'); g.addColorStop(1, '#1f1a2e');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.font = '600 46px Figtree, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(st.mode === 'pronta' ? 'Envie a imagem pronta' : 'Foto da influencer', W / 2, H / 2 + 260);
+    ctx.fillText(st.mode === 'pronta' ? 'Envie a imagem fixa' : 'Foto da influencer', W / 2, H / 2 + 260);
   }
   const ref = o.showRef && st.refImageId ? img(st.refImageId, o.redraw) : null;
   const drawRef = () => { if (!ref) return; ctx.globalAlpha = st.refOpacity; const r = coverRect(ref, null); ctx.drawImage(ref, r.x, r.y, r.w, r.h); ctx.globalAlpha = 1; };
@@ -558,6 +576,7 @@ function drawSel(ctx, l, o) {
   const dot = (x, y, label) => { ctx.fillStyle = '#ff3d8b'; ctx.beginPath(); ctx.arc(x, y, 14 * hs, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#fff'; ctx.font = `700 ${16 * hs}px Figtree, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, x, y + hs); };
   dot(l.w / 2, h / 2, '⤡'); dot(0, -h / 2 - 34 * hs, '↻');
+  if (l.type === 'text') { dot(-l.w / 2, 0, '↔'); dot(l.w / 2, 0, '↔'); }
   ctx.restore();
 }
 /* quadro de foto: a imagem é recortada e ajustada sozinha para preencher o quadro */
@@ -647,7 +666,7 @@ async function renderTplList() {
 $('#btnNovo').onclick = async () => { const t = newTemplate(); await DB.put('templates', t); openEditor(t.id); };
 
 /* ---------------- editor ---------------- */
-const E = { tpl: null, si: 0, sel: null, showRef: true, showSafe: true, undo: [], redo: [], lastPush: 0, drag: null, snap: null };
+const E = { open: {}, tpl: null, si: 0, sel: null, showRef: true, showSafe: true, undo: [], redo: [], lastPush: 0, drag: null, snap: null };
 const cv = $('#edCanvas'), cctx = cv.getContext('2d');
 const curStory = () => E.tpl.stories[E.si];
 const selLayer = () => E.sel && curStory().layers.find(l => l.id === E.sel);
@@ -679,7 +698,7 @@ function renderStrip() {
   E.tpl.stories.forEach((st, i) => {
     const b = document.createElement('button'); b.className = 'sthumb'; b.setAttribute('aria-current', String(i === E.si));
     const c = document.createElement('canvas'); b.appendChild(c);
-    b.insertAdjacentHTML('beforeend', `<span><span class="n">Story ${i + 1}</span><br><span class="small muted">${st.mode === 'pronta' ? 'Imagem pronta' : 'Foto da influencer'}</span></span>`);
+    b.insertAdjacentHTML('beforeend', `<span><span class="n">Story ${i + 1}</span><br><span class="small muted">${st.mode === 'pronta' ? 'Imagem fixa' : 'Foto da influencer'}</span></span>`);
     b.onclick = () => { E.si = i; E.sel = null; renderEditor(); };
     box.appendChild(b); thumb(c, st, E.tpl);
   });
@@ -754,6 +773,8 @@ cv.addEventListener('pointerdown', e => {
     const loc = toLocal(p, l), h = layerH(l, v), R = 30 * hs;
     if (Math.hypot(loc.x - l.w / 2, loc.y - h / 2) < R) mode = 'resize';
     else if (Math.hypot(loc.x, loc.y + h / 2 + 34 * hs) < R) mode = 'rotate';
+    else if (l.type === 'text' && Math.hypot(loc.x - l.w / 2, loc.y) < R) mode = 'wr';
+    else if (l.type === 'text' && Math.hypot(loc.x + l.w / 2, loc.y) < R) mode = 'wl';
   }
   if (!mode) {
     l = null;
@@ -780,6 +801,11 @@ cv.addEventListener('pointermove', e => {
     const a = -(l.rot || 0) * Math.PI / 180, dx = p.x - d.p0.x, dy = p.y - d.p0.y;
     l.fit.ox = o.fit.ox + dx * Math.cos(a) - dy * Math.sin(a); l.fit.oy = o.fit.oy + dx * Math.sin(a) + dy * Math.cos(a);
     clampFit(img(frameImgId(l, edO())), l, l.fit);
+  } else if (d.mode === 'wr' || d.mode === 'wl') {
+    // muda só a largura da caixa de texto; o lado oposto fica parado
+    const lp = toLocal(p, o), nw = Math.max(80, Math.round(d.mode === 'wr' ? lp.x + o.w / 2 : o.w / 2 - lp.x));
+    const shift = (d.mode === 'wr' ? 1 : -1) * (nw - o.w) / 2, an = (o.rot || 0) * Math.PI / 180;
+    l.w = nw; l.x = Math.round(o.x + shift * Math.cos(an)); l.y = Math.round(o.y + shift * Math.sin(an));
   } else if (d.mode === 'move') {
     let x = o.x + p.x - d.p0.x, y = o.y + p.y - d.p0.y; const sn = {};
     if (Math.abs(x - 540) < 14 * hs) { x = 540; sn.x = 1; } if (Math.abs(y - 960) < 14 * hs) { y = 960; sn.y = 1; }
@@ -846,36 +872,48 @@ function moveLayer(l, dir) {
 
 /* painel de propriedades */
 function bind(id, fn, ev = 'input') { const el = document.getElementById(id); if (el) el.addEventListener(ev, e => { pushUndo(); fn(e.target); changed(); }); }
+/* painel lateral, organizado em seções */
+const sec = (title, body, hint = '') => `<section class="sec"><h4>${title}</h4>${hint ? `<p class="small muted">${hint}</p>` : ''}${body}</section>`;
+const more = (key, title, body) => `<details class="more" data-k="${key}" ${E.open[key] ? 'open' : ''}><summary>${title}</summary><div class="more-b">${body}</div></details>`;
 function renderPanel() {
   const p = $('#propPanel'), l = selLayer(), st = curStory();
   if (E.crop && (!l || l.id !== E.crop.layerId)) E.crop = null;
   if (E.fitMode && (!l || l.type !== 'frame')) E.fitMode = false;
+  const wire = () => p.querySelectorAll('details.more').forEach(d => d.addEventListener('toggle', () => { E.open[d.dataset.k] = d.open; }));
   if (!l) {
-    const hasOv = st.layers.some(x => x.overlay);
-    p.innerHTML = `<span class="label">Story ${E.si + 1} de ${E.tpl.stories.length}</span>
-      <div class="field"><span>Sobreposição (seu print sem fundo)</span>
-        <label class="btn primary filebtn">${hasOv ? 'Trocar' : 'Enviar'} sobreposição<input type="file" id="inOv" accept="image/*" multiple></label>
-        <span class="small muted">Fica travada por cima da foto da influencer. Pode escolher vários prints de uma vez: o 1º vai neste story, o 2º no próximo, e assim por diante.</span></div>
-      <div class="field"><span>Fundo deste story</span><div class="seg">
-        <button id="mFoto" aria-pressed="${st.mode === 'foto'}">Foto da influencer</button>
-        <button id="mPronta" aria-pressed="${st.mode === 'pronta'}">Imagem pronta</button></div></div>
-      ${st.mode === 'pronta'
-        ? `<label class="btn filebtn">${st.bgImageId ? 'Trocar' : 'Enviar'} imagem pronta<input type="file" id="inBg" accept="image/*"></label>
-           <p class="small muted">Story sem foto da influencer: sai igual para todas.</p>`
-        : `<label class="btn filebtn">${E.tpl.sampleImageId ? 'Trocar' : 'Enviar'} foto de exemplo<input type="file" id="inSample" accept="image/*"></label>
-           <p class="small muted">A foto de exemplo serve só para visualizar o modelo. Na hora de gerar, entra a foto da influencer.</p>`}
-      <div class="field"><span>Imagem de referência (some na exportação)</span>
-        <div class="row"><label class="btn sm filebtn">${st.refImageId ? 'Trocar' : 'Enviar'} referência<input type="file" id="inRef" accept="image/*"></label>
-        ${st.refImageId ? '<button class="btn sm danger" id="rmRef">Remover</button>' : ''}</div></div>
-      ${st.refImageId ? `<label class="field"><span>Transparência da referência</span><input type="range" id="refOp" min="0.1" max="0.9" step="0.05" value="${st.refOpacity}"></label>
-        <label class="check"><input type="checkbox" id="refTop" ${st.refOnTop ? 'checked' : ''}> Mostrar referência por cima das camadas</label>` : ''}
-      <label class="field"><span>Nome de teste para {nome}</span><input type="text" id="pvName" value="${esc(E.tpl.previewName || '')}"></label>
-      <div class="grid2"><button class="btn sm" id="stLeft">← Mover</button><button class="btn sm" id="stRight">Mover →</button>
-        <button class="btn sm" id="stDup">Duplicar story</button><button class="btn sm danger" id="stDel">Excluir story</button></div>`;
+    const ov = st.layers.find(x => x.overlay);
+    p.innerHTML = `<div class="ph"><span class="label">Story ${E.si + 1} de ${E.tpl.stories.length}</span>
+        <p class="small muted">Para editar um texto, imagem ou quadro, toque nele no story ou na lista de camadas.</p></div>
+      ${sec('1 · Fundo', `<div class="seg">
+          <button id="mFoto" aria-pressed="${st.mode === 'foto'}">Foto da influencer</button>
+          <button id="mPronta" aria-pressed="${st.mode === 'pronta'}">Imagem fixa</button></div>
+        ${st.mode === 'pronta'
+          ? `<label class="btn filebtn">${st.bgImageId ? 'Trocar' : 'Enviar'} imagem fixa<input type="file" id="inBg" accept="image/*"></label>`
+          : `<label class="btn sm filebtn">${E.tpl.sampleImageId ? 'Trocar' : 'Escolher'} foto de teste<input type="file" id="inSample" accept="image/*"></label>`}`,
+        st.mode === 'pronta' ? 'Este story sai igual para todas as influencers.' : 'Na hora de gerar, entra a foto da influencer. A foto de teste serve só para você ver o modelo aqui.')}
+      ${sec('2 · Sobreposição (seu print)', ov
+          ? `<div class="grid2"><button class="btn sm" id="ovSel">Editar sobreposição</button><label class="btn sm filebtn">Trocar print<input type="file" id="inOv" accept="image/*" multiple></label></div>`
+          : `<label class="btn primary filebtn">Enviar print<input type="file" id="inOv" accept="image/*" multiple></label>`,
+        'Fica travada por cima da foto. O fundo preto é apagado sozinho. Pode escolher vários prints: o 1º vai neste story, o 2º no próximo, e assim por diante.')}
+      ${sec('3 · Adicionar por cima', `<div class="grid2">
+          <button class="btn sm" data-add="addText">Texto</button><button class="btn sm" data-add="inLayerImg">Imagem</button>
+          <button class="btn sm" data-add="addFrame">Quadro de foto</button><button class="btn sm" data-add="addLink">Lugar do link</button></div>`,
+        'Quadro de foto: área em que a foto é trocada e recortada sozinha. Lugar do link: só um guia, não sai na imagem.')}
+      ${more('molde', 'Molde de referência (opcional)', `<p class="small muted">Uma imagem transparente só para você copiar as posições. Não sai na imagem final.</p>
+        <div class="row"><label class="btn sm filebtn">${st.refImageId ? 'Trocar' : 'Enviar'} molde<input type="file" id="inRef" accept="image/*"></label>
+        ${st.refImageId ? '<button class="btn sm danger" id="rmRef">Remover</button>' : ''}</div>
+        ${st.refImageId ? `<label class="field"><span>Transparência</span><input type="range" id="refOp" min="0.1" max="0.9" step="0.05" value="${st.refOpacity}"></label>
+          <label class="check"><input type="checkbox" id="refTop" ${st.refOnTop ? 'checked' : ''}> Mostrar por cima das camadas</label>` : ''}`)}
+      ${more('teste', 'Nome de teste para {nome}', `<input type="text" id="pvName" value="${esc(E.tpl.previewName || '')}" aria-label="Nome de teste">`)}
+      ${sec('Este story', `<div class="grid2"><button class="btn sm" id="stLeft">← Mover</button><button class="btn sm" id="stRight">Mover →</button>
+        <button class="btn sm" id="stDup">Duplicar story</button><button class="btn sm danger" id="stDel">Excluir story</button></div>`)}`;
+    wire();
     $('#mFoto').onclick = () => { pushUndo(true); st.mode = 'foto'; changed(); renderEditor(); };
     $('#mPronta').onclick = () => { pushUndo(true); st.mode = 'pronta'; changed(); renderEditor(); };
     const up = (id, fn) => { const el = document.getElementById(id); if (el) el.onchange = async e => { const f = e.target.files[0]; if (!f) return; pushUndo(true); fn(await saveImageFile(f)); changed(); renderEditor(); }; };
     $('#inOv').onchange = async e => { const files = [...e.target.files]; e.target.value = ''; if (files.length) await addOverlays(files); };
+    if ($('#ovSel')) $('#ovSel').onclick = () => { E.sel = ov.id; renderPanel(); renderLayers(); draw(); };
+    p.querySelectorAll('[data-add]').forEach(b => b.onclick = () => document.getElementById(b.dataset.add).click());
     up('inBg', id => st.bgImageId = id); up('inSample', id => E.tpl.sampleImageId = id); up('inRef', id => { st.refImageId = id; E.showRef = true; $('#tgRef').classList.add('on'); });
     if ($('#rmRef')) $('#rmRef').onclick = () => { pushUndo(true); st.refImageId = null; changed(); renderPanel(); };
     bind('refOp', t => st.refOpacity = +t.value); bind('refTop', t => st.refOnTop = t.checked, 'change');
@@ -889,24 +927,23 @@ function renderPanel() {
     };
     return;
   }
-  const common = `<label class="field"><span>Girar (${l.rot || 0}°)</span><input type="range" id="pRot" min="-180" max="180" step="1" value="${l.rot || 0}"></label>`;
-  const acts = `<div class="grid2"><button class="btn sm" id="pDup">Duplicar</button><button class="btn sm" id="pCenter">Centralizar</button>
-      <button class="btn sm danger" id="pDel" ${l.protected ? 'disabled' : ''}>Excluir</button><button class="btn sm" id="pDone">Concluir</button></div>`;
+  const head = (t, note = '') => `<div class="ph"><button class="btn sm back" id="pBack">← Story ${E.si + 1}</button><span class="label">${t}</span>${note ? `<p class="note">${note}</p>` : ''}</div>`;
+  const rot = `<label class="field"><span>Girar (${l.rot || 0}°)</span><input type="range" id="pRot" min="-180" max="180" step="1" value="${l.rot || 0}"></label>`;
+  const acts = `<div class="acts"><button class="btn sm" id="pDup">Duplicar</button><button class="btn sm" id="pCenter">Centralizar</button>
+      <button class="btn sm danger" id="pDel" ${l.protected ? 'disabled' : ''}>Excluir</button><button class="btn sm primary" id="pDone">Pronto</button></div>`;
   if (l.type === 'link') {
-    p.innerHTML = `<span class="label">Lugar do adesivo de link</span>
-      <p class="note">Só aparece no editor e na prévia. Mostra onde a influencer deve colocar o adesivo de link do Instagram. Não sai na imagem exportada.</p>${acts}`;
+    p.innerHTML = head('Lugar do adesivo de link', 'Só aparece no editor e na prévia, para mostrar onde a influencer coloca o adesivo de link. Não sai na imagem.') + acts;
   } else if (l.type === 'frame') {
     const z = (l.fit || DEF_FIT).zoom;
-    p.innerHTML = `<span class="label">Quadro de foto</span>
-      <p class="note">A foto é recortada e ajustada sozinha para preencher o quadro. Coloque o quadro em cima da foto antiga do print (ex.: a miniatura do jogo) e ajuste o tamanho no ● do canto.</p>
-      <label class="field"><span>Nome do quadro</span><input type="text" id="fLabel" value="${esc(l.label || '')}"></label>
-      <label class="btn sm filebtn">${l.imageId ? 'Trocar' : 'Escolher'} foto padrão do quadro<input type="file" id="fImg" accept="image/*"></label>
-      <label class="check"><input type="checkbox" id="fInf" ${l.useInfluencer ? 'checked' : ''}> Usar a foto da influencer neste quadro</label>
-      <label class="check"><input type="checkbox" id="fSlot" ${l.slot ? 'checked' : ''}> Poder trocar a foto na hora de gerar</label>
-      <button class="btn sm ${E.fitMode ? 'on' : ''}" id="fFit">${E.fitMode ? '✓ Arraste a foto no quadro · tocar para sair' : 'Mover a foto dentro do quadro'}</button>
-      <label class="field"><span>Zoom da foto</span><input type="range" id="fZoom" min="1" max="4" step="0.01" value="${z}"></label>
-      <label class="field"><span>Cantos arredondados</span><input type="range" id="fRad" min="0" max="200" step="1" value="${l.radius || 0}"></label>
-      ${common}${acts}`;
+    p.innerHTML = head('Quadro de foto', 'A foto é recortada sozinha para preencher o quadro. Coloque o quadro em cima da foto antiga do print e ajuste o tamanho pelo ● do canto.')
+      + sec('Foto do quadro', `<label class="btn sm filebtn">${l.imageId ? 'Trocar' : 'Escolher'} foto padrão<input type="file" id="fImg" accept="image/*"></label>
+        <label class="check"><input type="checkbox" id="fInf" ${l.useInfluencer ? 'checked' : ''}> Usar a foto da influencer</label>
+        <label class="check"><input type="checkbox" id="fSlot" ${l.slot ? 'checked' : ''}> Poder trocar a foto na hora de gerar</label>`)
+      + sec('Enquadrar', `<button class="btn sm ${E.fitMode ? 'on' : ''}" id="fFit">${E.fitMode ? '✓ Arraste a foto · toque para sair' : 'Mover a foto dentro do quadro'}</button>
+        <label class="field"><span>Zoom da foto</span><input type="range" id="fZoom" min="1" max="4" step="0.01" value="${z}"></label>`)
+      + more('formato', 'Formato e nome', `<label class="field"><span>Nome do quadro (aparece na tela Gerar)</span><input type="text" id="fLabel" value="${esc(l.label || '')}"></label>
+        <label class="field"><span>Cantos arredondados</span><input type="range" id="fRad" min="0" max="200" step="1" value="${l.radius || 0}"></label>${rot}`)
+      + acts;
     const fi = () => img(frameImgId(l, edO()));
     $('#fLabel').oninput = e => { l.label = e.target.value; changed(); renderLayersSoon(); };
     $('#fImg').onchange = async e => { const f = e.target.files[0]; if (!f) return; pushUndo(true); l.imageId = await saveImageFile(f); l.fit = { ...DEF_FIT }; changed(); renderPanel(); };
@@ -917,8 +954,8 @@ function renderPanel() {
     bind('fRad', t => l.radius = +t.value);
   } else if (l.type === 'image' && E.crop) {
     const ok = E.crop.a && Math.abs(E.crop.b.x - E.crop.a.x) > 8 && Math.abs(E.crop.b.y - E.crop.a.y) > 8;
-    p.innerHTML = `<span class="label">Recortar pedaço</span>
-      <p class="note">Arraste no story para marcar o pedaço (por exemplo, um balão ou um texto do print).</p>
+    p.innerHTML = `<div class="ph"><span class="label">Recortar pedaço</span>
+      <p class="note">Arraste no story para marcar o pedaço (por exemplo, um balão ou um texto do print).</p></div>
       <button class="btn primary" id="cSplit" ${ok ? '' : 'disabled'}>Separar pedaço (para mover)</button>
       <button class="btn danger" id="cErase" ${ok ? '' : 'disabled'}>Apagar pedaço</button>
       <button class="btn" id="cCancel">Cancelar</button>`;
@@ -926,20 +963,17 @@ function renderPanel() {
     $('#cCancel').onclick = () => { E.crop = null; renderPanel(); draw(); };
     return;
   } else if (l.type === 'image') {
-    p.innerHTML = `<span class="label">${l.overlay ? 'Sobreposição' : 'Imagem'}</span>
-      ${l.locked ? '<p class="note">Travada: não sai do lugar quando você toca no story. Destrave para mover.</p>' : ''}
-      ${l.overlay ? `<div class="field"><span>Tamanho da sobreposição</span><div class="grid2">
-        <button class="btn sm" id="ovOrig">Original (sem esticar)</button><button class="btn sm" id="ovFull">Tela cheia</button></div></div>` : ''}
-      <button class="btn sm ${l.locked ? 'on' : ''}" id="pLock">${l.locked ? '🔒 Destravar posição' : 'Travar posição'}</button>
-      <div class="field"><span>Editar partes do print</span>
-        <button class="btn sm" id="pCrop">✂️ Recortar um pedaço para mover ou apagar</button></div>
-      <label class="btn sm filebtn">Trocar imagem<input type="file" id="pImg" accept="image/*"></label>
-      <div class="field"><span>Remover fundo liso (ex.: fundo preto de um print)</span>
+    p.innerHTML = head(l.overlay ? 'Sobreposição (print)' : 'Imagem', l.locked ? 'Travada: não sai do lugar quando você toca no story.' : '')
+      + sec('Posição', `<button class="btn sm ${l.locked ? 'on' : ''}" id="pLock">${l.locked ? '🔒 Destravar para mover' : '🔓 Travar no lugar'}</button>
+        ${l.overlay ? `<div class="grid2"><button class="btn sm" id="ovOrig">Tamanho original</button><button class="btn sm" id="ovFull">Tela cheia</button></div>` : ''}`)
+      + sec('Editar', `<button class="btn sm" id="pCrop">✂️ Recortar pedaço (mover ou apagar)</button>
+        <label class="btn sm filebtn">Trocar imagem<input type="file" id="pImg" accept="image/*"></label>`)
+      + more('fundo', 'Remover fundo liso', `<p class="small muted">Apaga a cor das bordas (ex.: o preto de um print). Mais para a direita apaga mais.</p>
         <input type="range" id="pTol" min="5" max="90" step="1" value="${l.bgTol || 30}" aria-label="Intensidade">
         <div class="grid2"><button class="btn sm" id="pRmBg">${l.srcImageId ? 'Aplicar de novo' : 'Remover fundo'}</button>
-        <button class="btn sm" id="pRestore" ${l.srcImageId ? '' : 'disabled'}>Voltar original</button></div>
-        <span class="small muted">Apaga a cor das bordas e o que encosta nela. Arraste para a direita para apagar mais.</span></div>
-      <label class="field"><span>Opacidade</span><input type="range" id="pOp" min="0.1" max="1" step="0.05" value="${l.opacity ?? 1}"></label>${common}${acts}`;
+        <button class="btn sm" id="pRestore" ${l.srcImageId ? '' : 'disabled'}>Voltar original</button></div>`)
+      + more('img-mais', 'Transparência e giro', `<label class="field"><span>Opacidade</span><input type="range" id="pOp" min="0.1" max="1" step="0.05" value="${l.opacity ?? 1}"></label>${rot}`)
+      + acts;
     $('#pImg').onchange = async e => { const f = e.target.files[0]; if (!f) return; pushUndo(true); const id = await saveImageFile(f), i = loaded.get(id);
       l.imageId = id; delete l.srcImageId; l.h = l.w * i.naturalHeight / i.naturalWidth; changed(); renderPanel(); };
     $('#pTol').oninput = e => { l.bgTol = +e.target.value; };
@@ -959,53 +993,54 @@ function renderPanel() {
   } else {
     const fopts = FONTS.map(([f, n]) => `<option value="${f}" ${l.font === f ? 'selected' : ''}>${n}</option>`).join('');
     const wopts = [[400, 'Normal'], [600, 'Médio'], [700, 'Negrito'], [800, 'Extra']].map(([w, n]) => `<option value="${w}" ${+l.weight === w ? 'selected' : ''}>${n}</option>`).join('');
-    p.innerHTML = `<span class="label">${l.protected ? 'Selo de publicidade' : 'Texto'}</span>
-      ${l.protected ? '<p class="note">Identificação de publicidade. Pode mudar o texto (ex.: Publi, #publi), a cor e o lugar, mas não excluir.</p>' : ''}
-      <label class="field"><span>Texto — use {nome} e {link}</span><textarea id="pText">${esc(l.text)}</textarea></label>
-      <div class="field"><span>Estilo Instagram</span><div class="igs" id="pIg">
-        ${IG_STYLES.map(([n, st], k) => `<button data-k="${k}" style="font-family:'${st.font}';font-weight:${st.weight};${st.italic ? 'font-style:italic;' : ''}${st.upper ? 'text-transform:uppercase;' : ''}">${n}</button>`).join('')}</div></div>
-      <div class="field"><span>Cor do texto</span><div class="sw" id="pSw">${IG_COLORS.map(c => `<button data-c="${c}" style="background:${c}" aria-label="Cor ${c}" aria-pressed="${l.color === c}"></button>`).join('')}</div></div>
-      <div class="grid2"><label class="field"><span>Fonte</span><select id="pFont">${fopts}</select></label>
-        <label class="field"><span>Peso</span><select id="pW">${wopts}</select></label></div>
-      <label class="field"><span>Tamanho (<b id="pSizeV">${l.size}</b> px)</span><input type="range" id="pSize" min="${l.protected ? 24 : 16}" max="220" step="1" value="${l.size}"></label>
-      <div class="field"><span>Alinhamento</span><div class="seg" id="pAlign">
-        ${[['left', 'Esquerda'], ['center', 'Centro'], ['right', 'Direita']].map(([a, n]) => `<button data-a="${a}" aria-pressed="${l.align === a}">${n}</button>`).join('')}</div></div>
-      <div class="row"><label class="field"><span>Cor</span><input type="color" id="pColor" value="${l.color}"></label>
-        <label class="field" style="flex:1"><span>Fundo</span><select id="pBg">
+    const sw = (id, cur) => `<div class="sw" id="${id}">${IG_COLORS.map(c => `<button data-c="${c}" style="background:${c}" aria-label="Cor ${c}" aria-pressed="${cur === c}"></button>`).join('')}</div>`;
+    p.innerHTML = head(l.protected ? 'Selo de publicidade' : 'Texto', l.protected ? 'Pode mudar o texto (ex.: Publi, #publi), a cor e o lugar, mas não excluir.' : '')
+      + sec('O que está escrito', `<textarea id="pText" aria-label="Texto">${esc(l.text)}</textarea>`, 'Escreva {nome} onde o nome da influencer deve aparecer. No story, puxe as bolinhas ↔ das laterais para mudar a largura.')
+      + sec('Estilo Instagram', `<div class="igs" id="pIg">
+        ${IG_STYLES.map(([n, s2], k) => `<button data-k="${k}" style="font-family:'${s2.font}';font-weight:${s2.weight};${s2.italic ? 'font-style:italic;' : ''}${s2.upper ? 'text-transform:uppercase;' : ''}">${n}</button>`).join('')}</div>`)
+      + sec('Cores', `<div class="field"><span>Texto</span>${sw('pSw', l.color)}</div>
+        <label class="field"><span>Fundo do texto</span><select id="pBg">
           <option value="none" ${l.bg === 'none' ? 'selected' : ''}>Sem fundo</option>
-          <option value="block" ${l.bg === 'block' ? 'selected' : ''}>Bloco</option>
-          <option value="ig" ${l.bg === 'ig' ? 'selected' : ''}>Destaque Instagram</option>
-          <option value="pill" ${l.bg === 'pill' ? 'selected' : ''}>Pílula por linha</option></select></label></div>
-      <div class="row"><label class="check"><input type="checkbox" id="pUp" ${l.upper ? 'checked' : ''}> MAIÚSCULAS</label>
-        <label class="check"><input type="checkbox" id="pIt" ${l.italic ? 'checked' : ''}> Itálico</label>
-        <label class="check"><input type="checkbox" id="pGl" ${l.glow ? 'checked' : ''}> Neon</label></div>
-      ${l.bg !== 'none' ? `<div class="field"><span>Cor do fundo</span><div class="sw" id="pSwBg">${IG_COLORS.map(c => `<button data-c="${c}" style="background:${c}" aria-label="Fundo ${c}" aria-pressed="${l.bgColor === c}"></button>`).join('')}</div></div>
-        <div class="row"><label class="field"><span>Outra cor</span><input type="color" id="pBgC" value="${l.bgColor}"></label>
-        <label class="field" style="flex:1"><span>Opacidade do fundo</span><input type="range" id="pBgO" min="0.1" max="1" step="0.05" value="${l.bgOpacity}"></label></div>`
-        : `<label class="check"><input type="checkbox" id="pSh" ${l.shadow ? 'checked' : ''}> Sombra no texto</label>`}
-      ${common}${acts}`;
+          <option value="ig" ${l.bg === 'ig' ? 'selected' : ''}>Destaque Instagram (por linha)</option>
+          <option value="block" ${l.bg === 'block' ? 'selected' : ''}>Faixa (bloco)</option>
+          <option value="pill" ${l.bg === 'pill' ? 'selected' : ''}>Pílula por linha</option></select></label>
+        ${l.bg !== 'none' ? `<div class="field"><span>Cor do fundo</span>${sw('pSwBg', l.bgColor)}</div>` : ''}`)
+      + more('fonte', 'Fonte, tamanho e alinhamento', `<div class="grid2"><label class="field"><span>Fonte</span><select id="pFont">${fopts}</select></label>
+          <label class="field"><span>Peso</span><select id="pW">${wopts}</select></label></div>
+        <label class="field"><span>Tamanho (<b id="pSizeV">${l.size}</b> px)</span><input type="range" id="pSize" min="${l.protected ? 24 : 16}" max="220" step="1" value="${l.size}"></label>
+        <div class="seg" id="pAlign">${[['left', 'Esquerda'], ['center', 'Centro'], ['right', 'Direita']].map(([a, n]) => `<button data-a="${a}" aria-pressed="${l.align === a}">${n}</button>`).join('')}</div>
+        <div class="row"><label class="check"><input type="checkbox" id="pUp" ${l.upper ? 'checked' : ''}> MAIÚSCULAS</label>
+          <label class="check"><input type="checkbox" id="pIt" ${l.italic ? 'checked' : ''}> Itálico</label>
+          <label class="check"><input type="checkbox" id="pGl" ${l.glow ? 'checked' : ''}> Neon</label></div>`)
+      + more('tx-mais', 'Mais ajustes', `<div class="row"><label class="field"><span>Outra cor do texto</span><input type="color" id="pColor" value="${l.color}"></label>
+          ${l.bg !== 'none' ? `<label class="field"><span>Outra cor do fundo</span><input type="color" id="pBgC" value="${l.bgColor}"></label>` : ''}</div>
+        ${l.bg !== 'none' ? `<label class="field"><span>Opacidade do fundo</span><input type="range" id="pBgO" min="0.1" max="1" step="0.05" value="${l.bgOpacity}"></label>`
+          : `<label class="check"><input type="checkbox" id="pSh" ${l.shadow ? 'checked' : ''}> Sombra no texto</label>`}${rot}`)
+      + acts;
     bind('pText', t => { l.text = t.value; if (l.protected && !t.value.trim()) l.text = 'Publicidade'; renderLayersSoon(); });
     bind('pFont', t => l.font = t.value, 'change'); bind('pW', t => l.weight = +t.value, 'change');
     bind('pSize', t => { l.size = +t.value; $('#pSizeV').textContent = t.value; });
     bind('pColor', t => l.color = t.value); bind('pBgC', t => l.bgColor = t.value); bind('pBgO', t => l.bgOpacity = +t.value);
     bind('pSh', t => l.shadow = t.checked, 'change');
     bind('pUp', t => l.upper = t.checked, 'change'); bind('pIt', t => l.italic = t.checked, 'change'); bind('pGl', t => l.glow = t.checked, 'change');
-    $('#pIg').querySelectorAll('button').forEach(b => b.onclick = () => { pushUndo(true); const st = IG_STYLES[+b.dataset.k][1];
-      Object.assign(l, st); if (!('color' in st) && (l.color === '#111111' || l.color === '#ff5fa2')) l.color = '#ffffff'; changed(); renderPanel(); });
+    $('#pIg').querySelectorAll('button').forEach(b => b.onclick = () => { pushUndo(true); const s2 = IG_STYLES[+b.dataset.k][1];
+      Object.assign(l, s2); if (!('color' in s2) && (l.color === '#111111' || l.color === '#ff5fa2')) l.color = '#ffffff'; changed(); renderPanel(); });
     $('#pSw').querySelectorAll('button').forEach(b => b.onclick = () => { pushUndo(true); l.color = b.dataset.c; changed(); renderPanel(); });
     if ($('#pSwBg')) $('#pSwBg').querySelectorAll('button').forEach(b => b.onclick = () => { pushUndo(true); l.bgColor = b.dataset.c; changed(); renderPanel(); });
     $('#pBg').onchange = e => { pushUndo(true); l.bg = e.target.value; changed(); renderPanel(); };
     $('#pAlign').querySelectorAll('button').forEach(b => b.onclick = () => { pushUndo(true); l.align = b.dataset.a; changed(); renderPanel(); });
   }
+  wire();
   bind('pRot', t => { l.rot = +t.value; t.previousElementSibling.textContent = `Girar (${t.value}°)`; });
   $('#pDup').onclick = () => {
     if (l.type === 'link') { toast('Cada story tem um só lugar de link.'); return; }
-    pushUndo(true); const c = JSON.parse(JSON.stringify(l)); c.id = uid(); c.x += 40; c.y += 40; delete c.protected;
+    pushUndo(true); const c = JSON.parse(JSON.stringify(l)); c.id = uid(); c.x += 40; c.y += 40; delete c.protected; delete c.overlay;
     curStory().layers.push(c); E.sel = c.id; changed(); renderPanel(); renderLayers();
   };
   $('#pCenter').onclick = () => { pushUndo(true); l.x = 540; changed(); };
   $('#pDel').onclick = () => deleteLayer(l);
-  $('#pDone').onclick = () => { E.sel = null; renderPanel(); renderLayers(); draw(); };
+  const close = () => { E.sel = null; renderPanel(); renderLayers(); draw(); };
+  $('#pDone').onclick = close; $('#pBack').onclick = close;
 }
 let rlT; function renderLayersSoon() { clearTimeout(rlT); rlT = setTimeout(renderLayers, 300); }
 function moveStory(dir) {
@@ -1040,7 +1075,7 @@ function renderPreviews() {
   G.tpl.stories.forEach((st, i) => {
     const a = adjFor(st), card = document.createElement('div'); card.className = 'pv';
     const isFoto = st.mode !== 'pronta', slots = st.layers.filter(l => l.type === 'frame' && l.slot);
-    card.innerHTML = `<div class="t"><span>${String(i + 1).padStart(2, '0')}</span><span class="tag">${isFoto ? 'Foto' : 'Imagem pronta'}</span></div>
+    card.innerHTML = `<div class="t"><span>${String(i + 1).padStart(2, '0')}</span><span class="tag">${isFoto ? 'Foto' : 'Imagem fixa'}</span></div>
       <canvas width="540" height="960"></canvas>
       ${isFoto ? `<label class="field"><span>Zoom</span><input type="range" min="1" max="3" step="0.01" value="${a.zoom}"></label>
       <div class="grid2"><button class="btn sm" data-a="c">Centralizar</button><label class="btn sm filebtn">Outra foto<input type="file" accept="image/*" data-bg></label></div>` : ''}
