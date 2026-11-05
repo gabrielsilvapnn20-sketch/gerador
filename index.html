@@ -142,6 +142,11 @@ input[type=range]{width:100%;accent-color:var(--accent);height:32px}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
 .modal-box{background:var(--surface);border-radius:16px;padding:20px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:16px}
 .modal-box .row{justify-content:flex-end}
+.help-box{max-width:640px;max-height:min(86vh,86dvh);overflow-y:auto}
+.help-box ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:12px}
+.help-box li::marker{font-weight:800;color:var(--accent)}
+.help-box h3{margin-top:4px}
+.help-box b{color:var(--accent)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:600;z-index:60;max-width:calc(100% - 32px)}
 .busy{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:55;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1.1rem}
 
@@ -163,6 +168,7 @@ input[type=range]{width:100%;accent-color:var(--accent);height:32px}
 <body>
 <header class="top"><div class="wrap">
   <div class="brand"><i aria-hidden="true"></i>Gerador de Stories</div>
+  <button class="btn sm" id="btnHelp">Como usar</button>
   <nav class="tabs" aria-label="Seções">
     <button data-view="modelos" aria-current="true">Modelos</button>
     <button data-view="gerar">Gerar</button>
@@ -265,6 +271,33 @@ input[type=range]{width:100%;accent-color:var(--accent);height:32px}
   </section>
 </main>
 
+<div class="modal" id="help" hidden><div class="modal-box help-box" role="dialog" aria-modal="true" aria-labelledby="helpT">
+  <h2 id="helpT">Como usar</h2>
+  <h3>Parte 1 · Criar o modelo (uma vez só)</h3>
+  <ol>
+    <li>Em <b>Modelos</b>, toque em <b>+ Novo modelo</b> e dê um nome a ele no campo do topo.</li>
+    <li>Com nenhuma camada selecionada, toque em <b>Enviar sobreposição</b> e escolha seus prints. Escolha os 3 de uma vez: o 1º vai no story 1, o 2º no story 2, o 3º no story 3. Se o print tiver fundo preto, o app apaga o fundo sozinho.</li>
+    <li>A sobreposição fica <b>travada</b>: você toca no story e ela não sai do lugar. Para mexer, selecione na lista de <b>Camadas</b> e toque em <b>Destravar posição</b>.</li>
+    <li>Quer textos com o nome da influencer? Toque em <b>+ Texto</b> e escreva <b>{nome}</b> onde o nome deve aparecer.</li>
+    <li>Toque em <b>+ Lugar do link</b> e arraste a caixa amarela até onde o adesivo de link deve ficar. Ela não sai na imagem final.</li>
+    <li>As faixas azuis em cima e embaixo são as partes que o Instagram cobre. Evite colocar coisas importantes ali.</li>
+    <li>O selo <b>Publicidade</b> vem em todo story. Você pode mudar o texto e o lugar dele.</li>
+  </ol>
+  <h3>Parte 2 · Gerar para uma influencer</h3>
+  <ol>
+    <li>Toque em <b>Usar este modelo</b> (ou na aba <b>Gerar</b>).</li>
+    <li>Escreva o <b>nome</b> da influencer.</li>
+    <li>Toque em <b>Escolher foto(s)</b> e selecione as fotos dela: uma por story, na ordem. A foto entra <b>por trás</b> da sobreposição.</li>
+    <li>Em cada story, arraste a foto com o dedo para enquadrar e use o <b>Zoom</b>.</li>
+    <li>Toque em <b>Preparar imagens</b>. Depois use <b>Compartilhar</b> (WhatsApp, Instagram) ou <b>Baixar tudo (.zip)</b>.</li>
+  </ol>
+  <h3>Dicas</h3>
+  <ol>
+    <li>Tudo fica salvo neste aparelho. Para levar os modelos para outro, use <b>Exportar backup</b> e <b>Importar backup</b>.</li>
+    <li>Errou? Use <b>Desfazer</b> no editor.</li>
+  </ol>
+  <div class="row"><button class="btn primary" id="helpOk">Entendi</button></div>
+</div></div>
 <div class="modal" id="modal" hidden><div class="modal-box" role="dialog" aria-modal="true">
   <p id="modalMsg"></p>
   <div class="row"><button class="btn" id="modalNo">Cancelar</button><button class="btn danger solid" id="modalYes">Excluir</button></div>
@@ -642,7 +675,7 @@ function toLocal(p, l) { const dx = p.x - l.x, dy = p.y - l.y, a = -(l.rot || 0)
 cv.addEventListener('pointerdown', e => {
   const p = toStory(e, cv), hs = W / cv.clientWidth, st = curStory(), v = vals();
   let mode = null, l = selLayer();
-  if (l) {
+  if (l && !l.locked) {
     const loc = toLocal(p, l), h = layerH(l, v), R = 30 * hs;
     if (Math.hypot(loc.x - l.w / 2, loc.y - h / 2) < R) mode = 'resize';
     else if (Math.hypot(loc.x, loc.y + h / 2 + 34 * hs) < R) mode = 'rotate';
@@ -650,7 +683,7 @@ cv.addEventListener('pointerdown', e => {
   if (!mode) {
     l = null;
     for (let i = st.layers.length - 1; i >= 0; i--) {
-      const c = st.layers[i]; if (c.type === 'link' && !E.showSafe) continue;
+      const c = st.layers[i]; if ((c.type === 'link' && !E.showSafe) || c.locked) continue;
       const loc = toLocal(p, c), h = layerH(c, v), pad = 8 * hs;
       if (Math.abs(loc.x) <= c.w / 2 + pad && Math.abs(loc.y) <= h / 2 + pad) { l = c; break; }
     }
@@ -706,7 +739,7 @@ function deleteLayer(l) {
 /* camadas */
 function layerName(l) {
   if (l.type === 'link') return ['LINK', 'Lugar do adesivo de link'];
-  if (l.type === 'image') return ['IMG', 'Imagem'];
+  if (l.type === 'image') return [l.overlay ? 'SOBREP' : 'IMG', (l.overlay ? 'Sobreposição' : 'Imagem') + (l.locked ? ' 🔒' : '')];
   return [l.protected ? 'PUBLI' : 'TEXTO', (l.text || '').split('\n')[0] || '(vazio)'];
 }
 function renderLayers() {
@@ -732,7 +765,11 @@ function bind(id, fn, ev = 'input') { const el = document.getElementById(id); if
 function renderPanel() {
   const p = $('#propPanel'), l = selLayer(), st = curStory();
   if (!l) {
+    const hasOv = st.layers.some(x => x.overlay);
     p.innerHTML = `<span class="label">Story ${E.si + 1} de ${E.tpl.stories.length}</span>
+      <div class="field"><span>Sobreposição (seu print sem fundo)</span>
+        <label class="btn primary filebtn">${hasOv ? 'Trocar' : 'Enviar'} sobreposição<input type="file" id="inOv" accept="image/*" multiple></label>
+        <span class="small muted">Fica travada por cima da foto da influencer. Pode escolher vários prints de uma vez: o 1º vai neste story, o 2º no próximo, e assim por diante.</span></div>
       <div class="field"><span>Fundo deste story</span><div class="seg">
         <button id="mFoto" aria-pressed="${st.mode === 'foto'}">Foto da influencer</button>
         <button id="mPronta" aria-pressed="${st.mode === 'pronta'}">Imagem pronta</button></div></div>
@@ -752,6 +789,7 @@ function renderPanel() {
     $('#mFoto').onclick = () => { pushUndo(true); st.mode = 'foto'; changed(); renderEditor(); };
     $('#mPronta').onclick = () => { pushUndo(true); st.mode = 'pronta'; changed(); renderEditor(); };
     const up = (id, fn) => { const el = document.getElementById(id); if (el) el.onchange = async e => { const f = e.target.files[0]; if (!f) return; pushUndo(true); fn(await saveImageFile(f)); changed(); renderEditor(); }; };
+    $('#inOv').onchange = async e => { const files = [...e.target.files]; e.target.value = ''; if (files.length) await addOverlays(files); };
     up('inBg', id => st.bgImageId = id); up('inSample', id => E.tpl.sampleImageId = id); up('inRef', id => { st.refImageId = id; E.showRef = true; $('#tgRef').classList.add('on'); });
     if ($('#rmRef')) $('#rmRef').onclick = () => { pushUndo(true); st.refImageId = null; changed(); renderPanel(); };
     bind('refOp', t => st.refOpacity = +t.value); bind('refTop', t => st.refOnTop = t.checked, 'change');
@@ -772,7 +810,9 @@ function renderPanel() {
     p.innerHTML = `<span class="label">Lugar do adesivo de link</span>
       <p class="note">Só aparece no editor e na prévia. Mostra onde a influencer deve colocar o adesivo de link do Instagram. Não sai na imagem exportada.</p>${acts}`;
   } else if (l.type === 'image') {
-    p.innerHTML = `<span class="label">Imagem</span>
+    p.innerHTML = `<span class="label">${l.overlay ? 'Sobreposição' : 'Imagem'}</span>
+      ${l.locked ? '<p class="note">Travada: não sai do lugar quando você toca no story. Destrave para mover.</p>' : ''}
+      <button class="btn sm ${l.locked ? 'on' : ''}" id="pLock">${l.locked ? '🔒 Destravar posição' : 'Travar posição'}</button>
       <label class="btn sm filebtn">Trocar imagem<input type="file" id="pImg" accept="image/*"></label>
       <div class="field"><span>Remover fundo liso (ex.: fundo preto de um print)</span>
         <input type="range" id="pTol" min="5" max="90" step="1" value="${l.bgTol || 30}" aria-label="Intensidade">
@@ -783,6 +823,7 @@ function renderPanel() {
     $('#pImg').onchange = async e => { const f = e.target.files[0]; if (!f) return; pushUndo(true); const id = await saveImageFile(f), i = loaded.get(id);
       l.imageId = id; delete l.srcImageId; l.h = l.w * i.naturalHeight / i.naturalWidth; changed(); renderPanel(); };
     $('#pTol').oninput = e => { l.bgTol = +e.target.value; };
+    $('#pLock').onclick = () => { pushUndo(true); l.locked = !l.locked; changed(); renderPanel(); renderLayers(); };
     $('#pRmBg').onclick = async () => {
       $('#busy').hidden = false;
       try { const src = l.srcImageId || l.imageId, id = await removeBorderBg(src, l.bgTol || 30);
@@ -900,6 +941,32 @@ $('#gFoto').onchange = async e => {
     renderPreviews();
   } finally { $('#busy').hidden = true; }
 };
+
+/* sobreposição: print sem fundo que fica travado por cima da foto */
+function hasTransparency(i) {
+  const c = document.createElement('canvas'); c.width = 16; c.height = 16; const x = c.getContext('2d'); x.drawImage(i, 0, 0, 16, 16);
+  const d = x.getImageData(0, 0, 16, 16).data; for (let k = 3; k < d.length; k += 4) if (d[k] < 250) return true; return false;
+}
+async function addOverlays(files) {
+  $('#busy').hidden = false;
+  try {
+    pushUndo(true);
+    for (let k = 0; k < files.length; k++) {
+      const idx = E.si + k; if (idx >= 8) break;
+      while (E.tpl.stories.length <= idx) E.tpl.stories.push(newStory());
+      const st = E.tpl.stories[idx], src = await saveImageFile(files[k]), i = loaded.get(src);
+      const id = hasTransparency(i) ? src : await removeBorderBg(src, 30);
+      const full = Math.abs(i.naturalWidth / i.naturalHeight - 9 / 16) < 0.04;
+      const layer = { id: uid(), type: 'image', overlay: true, locked: true, imageId: id, srcImageId: id !== src ? src : undefined, bgTol: 30,
+        x: 540, y: 960, w: W, h: full ? H : W * i.naturalHeight / i.naturalWidth, rot: 0, opacity: 1 };
+      const old = st.layers.findIndex(x => x.overlay);
+      if (old >= 0) st.layers[old] = layer; else st.layers.unshift(layer);
+      st.mode = 'foto';
+    }
+    E.sel = null; changed(); renderEditor();
+    toast(files.length > 1 ? `${files.length} sobreposições adicionadas` : 'Sobreposição adicionada');
+  } finally { $('#busy').hidden = true; }
+}
 
 /* remove o fundo liso (ex.: preto) que encosta nas bordas da imagem, mantendo o que está dentro dos balões */
 async function removeBorderBg(srcId, tol) {
@@ -1056,7 +1123,12 @@ window.GeradorStories = {
   onExport: null
 };
 
-(async () => { await DB.open(); await seedExample(); show('modelos'); document.fonts && document.fonts.ready.then(() => current === 'editor' && draw()); })();
+function openHelp() { $('#help').hidden = false; $('.help-box').scrollTop = 0; $('#helpOk').focus({ preventScroll: true }); }
+$('#btnHelp').onclick = openHelp;
+$('#helpOk').onclick = () => { $('#help').hidden = true; try { localStorage.setItem('gs-help', '1'); } catch (e) {} };
+$('#help').onclick = e => { if (e.target.id === 'help') $('#helpOk').click(); };
+(async () => { await DB.open(); await seedExample(); show('modelos');
+  let seen = false; try { seen = localStorage.getItem('gs-help') === '1'; } catch (e) {} if (!seen) openHelp(); document.fonts && document.fonts.ready.then(() => current === 'editor' && draw()); })();
 </script>
 </body>
 </html>
