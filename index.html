@@ -8,7 +8,7 @@
 <title>Gerador de Stories</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700;800&family=Montserrat:wght@400;700;800&family=Poppins:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Playfair+Display:wght@400;700&family=Bebas+Neue&family=Pacifico&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700;800&family=Montserrat:wght@400;700;800&family=Poppins:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Playfair+Display:wght@400;700&family=Bebas+Neue&family=Pacifico&family=Oswald:wght@500;600;700&family=Courier+Prime:wght@400;700&family=Yellowtail&family=Anton&display=swap">
 <script src="jszip.min.js"></script>
 <style>
 /* Layout: app de trabalho — barra fixa com abas; editor em 3 colunas no computador, empilhado no celular */
@@ -119,6 +119,12 @@ input[type=range]{width:100%;accent-color:var(--accent);height:32px}
 .lrow .ico{font-size:.7rem;font-weight:800;letter-spacing:.06em;color:var(--muted);width:42px}
 .lrow button{border:0;background:transparent;color:var(--fg);width:38px;height:38px;border-radius:8px;cursor:pointer;font-size:16px}
 .lrow button:hover{background:var(--surface-2)}
+.igs{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.igs button{min-height:44px;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);border-radius:10px;font-size:16px;cursor:pointer;padding:4px 6px}
+.igs button:hover{border-color:var(--accent)}
+.sw{display:flex;flex-wrap:wrap;gap:8px}
+.sw button{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}
+.sw button[aria-pressed="true"]{outline:3px solid var(--accent);outline-offset:2px}
 
 /* gerar */
 .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
@@ -278,7 +284,8 @@ input[type=range]{width:100%;accent-color:var(--accent);height:32px}
     <li>Em <b>Modelos</b>, toque em <b>+ Novo modelo</b> e dê um nome a ele no campo do topo.</li>
     <li>Com nenhuma camada selecionada, toque em <b>Enviar sobreposição</b> e escolha seus prints. Escolha os 3 de uma vez: o 1º vai no story 1, o 2º no story 2, o 3º no story 3. Se o print tiver fundo preto, o app apaga o fundo sozinho.</li>
     <li>A sobreposição fica <b>travada</b>: você toca no story e ela não sai do lugar. Para mexer, selecione na lista de <b>Camadas</b> e toque em <b>Destravar posição</b>.</li>
-    <li>Quer textos com o nome da influencer? Toque em <b>+ Texto</b> e escreva <b>{nome}</b> onde o nome deve aparecer.</li>
+    <li>Quer mudar algo do print de lugar? Toque no <b>🔒</b> da sobreposição na lista de <b>Camadas</b> para destravar, depois em <b>✂️ Recortar um pedaço</b>. Marque o pedaço com o dedo e escolha <b>Separar pedaço</b> (vira uma camada que você arrasta) ou <b>Apagar pedaço</b>.</li>
+    <li>Para legendas novas, toque em <b>+ Texto</b> e escolha um <b>Estilo Instagram</b> (Clássica, com fundo, Moderna, Neon, Máquina, Forte). Escreva <b>{nome}</b> onde o nome da influencer deve aparecer.</li>
     <li>Toque em <b>+ Lugar do link</b> e arraste a caixa amarela até onde o adesivo de link deve ficar. Ela não sai na imagem final.</li>
     <li>As faixas azuis em cima e embaixo são as partes que o Instagram cobre. Evite colocar coisas importantes ali.</li>
     <li>O selo <b>Publicidade</b> vem em todo story. Você pode mudar o texto e o lugar dele.</li>
@@ -295,6 +302,7 @@ input[type=range]{width:100%;accent-color:var(--accent);height:32px}
   <ol>
     <li>Tudo fica salvo neste aparelho. Para levar os modelos para outro, use <b>Exportar backup</b> e <b>Importar backup</b>.</li>
     <li>Errou? Use <b>Desfazer</b> no editor.</li>
+    <li><b>Qualidade:</b> a imagem final sai em 1080×1920 sem perda. O que deixa borrado é o arquivo de origem: prints e fotos que passaram pelo WhatsApp perdem muita qualidade. Use o print original do celular (ou envie no WhatsApp como <b>Documento</b>). Textos criados no app com <b>+ Texto</b> saem sempre nítidos.</li>
   </ol>
   <div class="row"><button class="btn primary" id="helpOk">Entendi</button></div>
 </div></div>
@@ -314,9 +322,22 @@ const W = 1080, H = 1920;
 const SAFE_TOP = 250, SAFE_BOTTOM = 340;   // faixas que o Instagram cobre
 const FONTS = [
   ['Source Serif 4', 'Serifada clássica'], ['Playfair Display', 'Playfair'], ['Montserrat', 'Montserrat'],
-  ['Poppins', 'Poppins'], ['Figtree', 'Figtree'], ['Bebas Neue', 'Bebas (títulos)'], ['Pacifico', 'Pacifico (manuscrita)']
+  ['Poppins', 'Poppins'], ['Figtree', 'Figtree'], ['Bebas Neue', 'Bebas (títulos)'], ['Pacifico', 'Pacifico (manuscrita)'],
+  ['Oswald', 'Moderna (condensada)'], ['Courier Prime', 'Máquina de escrever'], ['Yellowtail', 'Neon (cursiva)'], ['Anton', 'Forte']
 ];
 const $ = s => document.querySelector(s);
+/* estilos de legenda parecidos com os do Instagram (fontes livres equivalentes) */
+const IG_STYLES = [
+  ['Clássica', { font: 'Figtree', weight: 600, italic: false, upper: false, bg: 'none', shadow: true, glow: false, lineHeight: 1.2 }],
+  ['Clássica c/ fundo', { font: 'Figtree', weight: 600, italic: false, upper: false, bg: 'ig', bgColor: '#ffffff', bgOpacity: 1, color: '#111111', shadow: false, glow: false, lineHeight: 1.25 }],
+  ['Fundo transparente', { font: 'Figtree', weight: 600, italic: false, upper: false, bg: 'ig', bgColor: '#000000', bgOpacity: 0.55, color: '#ffffff', shadow: false, glow: false, lineHeight: 1.25 }],
+  ['Moderna', { font: 'Oswald', weight: 600, italic: false, upper: true, bg: 'none', shadow: true, glow: false, lineHeight: 1.15 }],
+  ['Neon', { font: 'Yellowtail', weight: 400, italic: false, upper: false, bg: 'none', shadow: false, glow: true, color: '#ff5fa2', lineHeight: 1.2 }],
+  ['Máquina', { font: 'Courier Prime', weight: 700, italic: false, upper: false, bg: 'none', shadow: true, glow: false, lineHeight: 1.25 }],
+  ['Forte', { font: 'Anton', weight: 400, italic: true, upper: true, bg: 'none', shadow: true, glow: false, lineHeight: 1.1 }],
+  ['Elegante c/ faixa', { font: 'Source Serif 4', weight: 400, italic: false, upper: false, bg: 'block', bgColor: '#6d1233', bgOpacity: 1, color: '#ffffff', shadow: false, glow: false, lineHeight: 1.22 }]
+];
+const IG_COLORS = ['#ffffff', '#000000', '#3897f0', '#70c050', '#fdcb5c', '#fd8d32', '#ed4956', '#d10869', '#a307ba', '#6d1233'];
 const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-5);
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -410,17 +431,18 @@ function newTemplate(name = 'Nova sequência') {
 
 /* ---------------- desenho ---------------- */
 const mctx = document.createElement('canvas').getContext('2d');
-const fontStr = l => `${l.weight || 400} ${l.size}px "${l.font}", system-ui, sans-serif`;
+const fontStr = l => `${l.italic ? 'italic ' : ''}${l.weight || 400} ${l.size}px "${l.font}", system-ui, sans-serif`;
 function hexA(hex, a) {
   const h = (hex || '#000000').replace('#', ''); const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a ?? 1})`;
 }
 function layoutText(l, vals) {
   mctx.font = fontStr(l);
-  const padX = l.bg === 'none' ? 0 : l.size * 0.45, padY = l.bg === 'block' ? l.size * 0.32 : (l.bg === 'pill' ? l.size * 0.12 : 0);
+  const padX = l.bg === 'none' ? 0 : l.bg === 'ig' ? l.size * 0.32 : l.size * 0.45, padY = l.bg === 'block' ? l.size * 0.32 : (l.bg === 'pill' ? l.size * 0.12 : l.bg === 'ig' ? l.size * 0.06 : 0);
   const maxW = Math.max(20, l.w - padX * 2);
   const lines = [];
-  for (const para of fill(l.text, vals).split('\n')) {
+  let full = fill(l.text, vals); if (l.upper) full = full.toUpperCase();
+  for (const para of full.split('\n')) {
     let line = '';
     for (const word of para.split(' ')) {
       const test = line ? line + ' ' + word : word;
@@ -454,12 +476,17 @@ function drawText(ctx, l, vals, redraw) {
   L.lines.forEach((ln, i) => {
     const tw = L.widths[i], cy = top + L.padY + L.lineH * (i + 0.5);
     const tx = l.align === 'left' ? aL : l.align === 'right' ? aR - tw : (aL + aR) / 2 - tw / 2;
+    if (l.bg === 'ig' && ln.trim()) {
+      ctx.fillStyle = hexA(l.bgColor, l.bgOpacity); const ph = L.lineH + 2;
+      rrect(ctx, tx - L.padX, cy - ph / 2, tw + 2 * L.padX, ph, l.size * 0.26); ctx.fill();
+    }
     if (l.bg === 'pill' && ln.trim()) {
       ctx.fillStyle = hexA(l.bgColor, l.bgOpacity); const ph = L.lineH * 0.98;
       rrect(ctx, tx - L.padX, cy - ph / 2, tw + 2 * L.padX, ph, ph / 2); ctx.fill();
     }
-    if (l.shadow) { ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = l.size * 0.18; ctx.shadowOffsetY = l.size * 0.04; }
-    ctx.fillStyle = l.color; ctx.fillText(ln, tx, cy);
+    if (l.glow) { ctx.shadowColor = l.color; ctx.shadowBlur = l.size * 0.45; ctx.fillStyle = l.color; ctx.fillText(ln, tx, cy); ctx.shadowBlur = l.size * 0.15; }
+    else if (l.shadow) { ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = l.size * 0.18; ctx.shadowOffsetY = l.size * 0.04; }
+    ctx.fillStyle = l.glow ? '#ffffff' : l.color; ctx.fillText(ln, tx, cy);
     ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
   });
 }
@@ -477,6 +504,7 @@ function clampAdj(i, a) {
 /* o: {photoId, adj, vals, guides(bool: áreas seguras + link), showRef, selId, editor, redraw, hs} */
 function drawStory(ctx, st, o) {
   ctx.save();
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
   ctx.fillStyle = '#2a2026'; ctx.fillRect(0, 0, W, H);
   const bgId = st.mode === 'pronta' ? st.bgImageId : o.photoId;
   const bg = img(bgId, o.redraw);
@@ -611,7 +639,13 @@ function drawNow() {
   if (!E.tpl) return;
   const hs = W / (cv.clientWidth || 360);
   cctx.setTransform(1, 0, 0, 1, 0, 0);
-  drawStory(cctx, curStory(), { photoId: E.tpl.sampleImageId, vals: vals(), guides: E.showSafe, showRef: E.showRef, selId: E.sel, editor: true, redraw: draw, hs, snap: E.snap });
+  drawStory(cctx, curStory(), { photoId: E.tpl.sampleImageId, vals: vals(), guides: E.showSafe, showRef: E.showRef, selId: E.crop ? null : E.sel, editor: true, redraw: draw, hs, snap: E.snap });
+  const c = E.crop;
+  if (c && c.a) {
+    const x = Math.min(c.a.x, c.b.x), y = Math.min(c.a.y, c.b.y), w = Math.abs(c.b.x - c.a.x), h = Math.abs(c.b.y - c.a.y);
+    cctx.save(); cctx.fillStyle = 'rgba(0,0,0,.45)'; cctx.beginPath(); cctx.rect(0, 0, W, H); cctx.rect(x, y, w, h); cctx.fill('evenodd');
+    cctx.strokeStyle = '#ffffff'; cctx.lineWidth = 2.5 * hs; cctx.setLineDash([10 * hs, 6 * hs]); cctx.strokeRect(x, y, w, h); cctx.restore();
+  }
 }
 function renderEditor() { renderStrip(); renderPanel(); renderLayers(); draw(); updUndo(); }
 function renderStrip() {
@@ -649,7 +683,7 @@ $('#edBack').onclick = async () => { await saveNow(); show('modelos'); };
 $('#edUse').onclick = async () => { await saveNow(); G.tplId = E.tpl.id; G.adj = {}; G.files = null; show('gerar'); };
 
 /* adicionar camadas */
-$('#addText').onclick = () => { pushUndo(true); const l = textLayer(); curStory().layers.push(l); E.sel = l.id; changed(); renderPanel(); renderLayers(); };
+$('#addText').onclick = () => { pushUndo(true); const l = textLayer(Object.assign({ text: 'Toque para editar', size: 72 }, IG_STYLES[0][1], { color: '#ffffff' })); curStory().layers.push(l); E.sel = l.id; changed(); renderPanel(); renderLayers(); };
 $('#addLink').onclick = () => {
   const ex = curStory().layers.find(l => l.type === 'link');
   if (ex) { E.sel = ex.id; toast('Este story já tem o lugar do link. Arraste para posicionar.'); }
@@ -674,6 +708,7 @@ function toStory(e, c) { const r = c.getBoundingClientRect(); return { x: (e.cli
 function toLocal(p, l) { const dx = p.x - l.x, dy = p.y - l.y, a = -(l.rot || 0) * Math.PI / 180; return { x: dx * Math.cos(a) - dy * Math.sin(a), y: dx * Math.sin(a) + dy * Math.cos(a) }; }
 cv.addEventListener('pointerdown', e => {
   const p = toStory(e, cv), hs = W / cv.clientWidth, st = curStory(), v = vals();
+  if (E.crop) { E.crop.a = p; E.crop.b = p; E.crop.dragging = true; cv.setPointerCapture(e.pointerId); draw(); e.preventDefault(); return; }
   let mode = null, l = selLayer();
   if (l && !l.locked) {
     const loc = toLocal(p, l), h = layerH(l, v), R = 30 * hs;
@@ -696,6 +731,7 @@ cv.addEventListener('pointerdown', e => {
   cv.setPointerCapture(e.pointerId); draw(); e.preventDefault();
 });
 cv.addEventListener('pointermove', e => {
+  if (E.crop) { if (E.crop.dragging) { E.crop.b = toStory(e, cv); draw(); } return; }
   const d = E.drag; if (!d) return; const l = selLayer(); if (!l) return;
   const p = toStory(e, cv), hs = W / cv.clientWidth, o = d.l0;
   if (!d.moved && Math.hypot(p.x - d.p0.x, p.y - d.p0.y) < 4 * hs) return;
@@ -719,6 +755,7 @@ cv.addEventListener('pointermove', e => {
   draw();
 });
 function endDrag() {
+  if (E.crop) { if (E.crop.dragging) { E.crop.dragging = false; renderPanel(); } return; }
   const d = E.drag; if (!d) return; E.drag = null; E.snap = null;
   if (d.moved) { E.undo.push(d.before); E.redo = []; updUndo(); changed(); renderPanel(); } else draw();
 }
@@ -747,10 +784,11 @@ function renderLayers() {
   [...st.layers].reverse().forEach(l => {
     const [ico, nm] = layerName(l), r = document.createElement('div'); r.className = 'lrow'; r.setAttribute('aria-current', String(l.id === E.sel));
     r.innerHTML = `<span class="ico">${ico}</span><span class="nm">${esc(nm)}</span>
-      <button title="Subir" aria-label="Subir camada">▲</button><button title="Descer" aria-label="Descer camada">▼</button>`;
+      ${l.type === 'image' ? `<button class="lk" title="${l.locked ? 'Destravar' : 'Travar'}" aria-label="${l.locked ? 'Destravar' : 'Travar'} camada">${l.locked ? '🔒' : '🔓'}</button>` : ''}
+      <button class="up" title="Subir" aria-label="Subir camada">▲</button><button class="dn" title="Descer" aria-label="Descer camada">▼</button>`;
     r.querySelector('.nm').onclick = () => { E.sel = l.id; renderPanel(); renderLayers(); draw(); };
-    const [up, dn] = r.querySelectorAll('button');
-    up.onclick = () => moveLayer(l, 1); dn.onclick = () => moveLayer(l, -1);
+    r.querySelector('.up').onclick = () => moveLayer(l, 1); r.querySelector('.dn').onclick = () => moveLayer(l, -1);
+    const lk = r.querySelector('.lk'); if (lk) lk.onclick = () => { pushUndo(true); l.locked = !l.locked; E.sel = l.id; changed(); renderPanel(); renderLayers(); };
     box.appendChild(r);
   });
   if (!st.layers.length) box.innerHTML = '<p class="small muted">Sem camadas.</p>';
@@ -764,6 +802,7 @@ function moveLayer(l, dir) {
 function bind(id, fn, ev = 'input') { const el = document.getElementById(id); if (el) el.addEventListener(ev, e => { pushUndo(); fn(e.target); changed(); }); }
 function renderPanel() {
   const p = $('#propPanel'), l = selLayer(), st = curStory();
+  if (E.crop && (!l || l.id !== E.crop.layerId)) E.crop = null;
   if (!l) {
     const hasOv = st.layers.some(x => x.overlay);
     p.innerHTML = `<span class="label">Story ${E.si + 1} de ${E.tpl.stories.length}</span>
@@ -809,10 +848,22 @@ function renderPanel() {
   if (l.type === 'link') {
     p.innerHTML = `<span class="label">Lugar do adesivo de link</span>
       <p class="note">Só aparece no editor e na prévia. Mostra onde a influencer deve colocar o adesivo de link do Instagram. Não sai na imagem exportada.</p>${acts}`;
+  } else if (l.type === 'image' && E.crop) {
+    const ok = E.crop.a && Math.abs(E.crop.b.x - E.crop.a.x) > 8 && Math.abs(E.crop.b.y - E.crop.a.y) > 8;
+    p.innerHTML = `<span class="label">Recortar pedaço</span>
+      <p class="note">Arraste no story para marcar o pedaço (por exemplo, um balão ou um texto do print).</p>
+      <button class="btn primary" id="cSplit" ${ok ? '' : 'disabled'}>Separar pedaço (para mover)</button>
+      <button class="btn danger" id="cErase" ${ok ? '' : 'disabled'}>Apagar pedaço</button>
+      <button class="btn" id="cCancel">Cancelar</button>`;
+    $('#cSplit').onclick = () => applyCrop('split'); $('#cErase').onclick = () => applyCrop('erase');
+    $('#cCancel').onclick = () => { E.crop = null; renderPanel(); draw(); };
+    return;
   } else if (l.type === 'image') {
     p.innerHTML = `<span class="label">${l.overlay ? 'Sobreposição' : 'Imagem'}</span>
       ${l.locked ? '<p class="note">Travada: não sai do lugar quando você toca no story. Destrave para mover.</p>' : ''}
       <button class="btn sm ${l.locked ? 'on' : ''}" id="pLock">${l.locked ? '🔒 Destravar posição' : 'Travar posição'}</button>
+      <div class="field"><span>Editar partes do print</span>
+        <button class="btn sm" id="pCrop">✂️ Recortar um pedaço para mover ou apagar</button></div>
       <label class="btn sm filebtn">Trocar imagem<input type="file" id="pImg" accept="image/*"></label>
       <div class="field"><span>Remover fundo liso (ex.: fundo preto de um print)</span>
         <input type="range" id="pTol" min="5" max="90" step="1" value="${l.bgTol || 30}" aria-label="Intensidade">
@@ -830,6 +881,7 @@ function renderPanel() {
         if (id) { pushUndo(true); l.srcImageId = src; l.imageId = id; changed(); renderPanel(); toast('Fundo removido'); } }
       finally { $('#busy').hidden = true; }
     };
+    $('#pCrop').onclick = () => { E.crop = { layerId: l.id, a: null, b: null }; renderPanel(); draw(); };
     $('#pRestore').onclick = () => { pushUndo(true); l.imageId = l.srcImageId; delete l.srcImageId; changed(); renderPanel(); };
     bind('pOp', t => l.opacity = +t.value);
   } else {
@@ -838,6 +890,9 @@ function renderPanel() {
     p.innerHTML = `<span class="label">${l.protected ? 'Selo de publicidade' : 'Texto'}</span>
       ${l.protected ? '<p class="note">Identificação de publicidade. Pode mudar o texto (ex.: Publi, #publi), a cor e o lugar, mas não excluir.</p>' : ''}
       <label class="field"><span>Texto — use {nome} e {link}</span><textarea id="pText">${esc(l.text)}</textarea></label>
+      <div class="field"><span>Estilo Instagram</span><div class="igs" id="pIg">
+        ${IG_STYLES.map(([n, st], k) => `<button data-k="${k}" style="font-family:'${st.font}';font-weight:${st.weight};${st.italic ? 'font-style:italic;' : ''}${st.upper ? 'text-transform:uppercase;' : ''}">${n}</button>`).join('')}</div></div>
+      <div class="field"><span>Cor do texto</span><div class="sw" id="pSw">${IG_COLORS.map(c => `<button data-c="${c}" style="background:${c}" aria-label="Cor ${c}" aria-pressed="${l.color === c}"></button>`).join('')}</div></div>
       <div class="grid2"><label class="field"><span>Fonte</span><select id="pFont">${fopts}</select></label>
         <label class="field"><span>Peso</span><select id="pW">${wopts}</select></label></div>
       <label class="field"><span>Tamanho (<b id="pSizeV">${l.size}</b> px)</span><input type="range" id="pSize" min="${l.protected ? 24 : 16}" max="220" step="1" value="${l.size}"></label>
@@ -847,8 +902,13 @@ function renderPanel() {
         <label class="field" style="flex:1"><span>Fundo</span><select id="pBg">
           <option value="none" ${l.bg === 'none' ? 'selected' : ''}>Sem fundo</option>
           <option value="block" ${l.bg === 'block' ? 'selected' : ''}>Bloco</option>
+          <option value="ig" ${l.bg === 'ig' ? 'selected' : ''}>Destaque Instagram</option>
           <option value="pill" ${l.bg === 'pill' ? 'selected' : ''}>Pílula por linha</option></select></label></div>
-      ${l.bg !== 'none' ? `<div class="row"><label class="field"><span>Cor do fundo</span><input type="color" id="pBgC" value="${l.bgColor}"></label>
+      <div class="row"><label class="check"><input type="checkbox" id="pUp" ${l.upper ? 'checked' : ''}> MAIÚSCULAS</label>
+        <label class="check"><input type="checkbox" id="pIt" ${l.italic ? 'checked' : ''}> Itálico</label>
+        <label class="check"><input type="checkbox" id="pGl" ${l.glow ? 'checked' : ''}> Neon</label></div>
+      ${l.bg !== 'none' ? `<div class="field"><span>Cor do fundo</span><div class="sw" id="pSwBg">${IG_COLORS.map(c => `<button data-c="${c}" style="background:${c}" aria-label="Fundo ${c}" aria-pressed="${l.bgColor === c}"></button>`).join('')}</div></div>
+        <div class="row"><label class="field"><span>Outra cor</span><input type="color" id="pBgC" value="${l.bgColor}"></label>
         <label class="field" style="flex:1"><span>Opacidade do fundo</span><input type="range" id="pBgO" min="0.1" max="1" step="0.05" value="${l.bgOpacity}"></label></div>`
         : `<label class="check"><input type="checkbox" id="pSh" ${l.shadow ? 'checked' : ''}> Sombra no texto</label>`}
       ${common}${acts}`;
@@ -857,6 +917,11 @@ function renderPanel() {
     bind('pSize', t => { l.size = +t.value; $('#pSizeV').textContent = t.value; });
     bind('pColor', t => l.color = t.value); bind('pBgC', t => l.bgColor = t.value); bind('pBgO', t => l.bgOpacity = +t.value);
     bind('pSh', t => l.shadow = t.checked, 'change');
+    bind('pUp', t => l.upper = t.checked, 'change'); bind('pIt', t => l.italic = t.checked, 'change'); bind('pGl', t => l.glow = t.checked, 'change');
+    $('#pIg').querySelectorAll('button').forEach(b => b.onclick = () => { pushUndo(true); const st = IG_STYLES[+b.dataset.k][1];
+      Object.assign(l, st); if (!('color' in st) && (l.color === '#111111' || l.color === '#ff5fa2')) l.color = '#ffffff'; changed(); renderPanel(); });
+    $('#pSw').querySelectorAll('button').forEach(b => b.onclick = () => { pushUndo(true); l.color = b.dataset.c; changed(); renderPanel(); });
+    if ($('#pSwBg')) $('#pSwBg').querySelectorAll('button').forEach(b => b.onclick = () => { pushUndo(true); l.bgColor = b.dataset.c; changed(); renderPanel(); });
     $('#pBg').onchange = e => { pushUndo(true); l.bg = e.target.value; changed(); renderPanel(); };
     $('#pAlign').querySelectorAll('button').forEach(b => b.onclick = () => { pushUndo(true); l.align = b.dataset.a; changed(); renderPanel(); });
   }
@@ -892,6 +957,8 @@ async function renderGerar() {
 }
 function gVals() { return { nome: G.nome || 'Nome', link: G.link }; }
 function drawPreview(c, st) {
+  const tw = Math.min(W, Math.round((c.clientWidth || 270) * (window.devicePixelRatio || 1)));
+  if (c.width !== tw) { c.width = tw; c.height = Math.round(tw * H / W); }
   const a = adjFor(st), ctx = c.getContext('2d');
   ctx.setTransform(c.width / W, 0, 0, c.height / H, 0, 0);
   drawStory(ctx, st, { photoId: a.photoId || G.photoId, adj: a, vals: gVals(), guides: $('#gGuide').checked, editor: true, redraw: () => drawPreview(c, st) });
@@ -984,9 +1051,52 @@ async function removeBorderBg(srcId, tol) {
     const k = stack.pop(), xx = k % w, yy = (k - xx) / w; px[k * 4 + 3] = 0;
     if (xx > 0) push(xx - 1, yy); if (xx < w - 1) push(xx + 1, yy); if (yy > 0) push(xx, yy - 1); if (yy < h - 1) push(xx, yy + 1);
   }
+  // borda suave: pixels vizinhos do fundo ficam semitransparentes e com a cor "desmisturada" do fundo
+  const dist = p => Math.max(Math.abs(px[p] - r0), Math.abs(px[p + 1] - g0), Math.abs(px[p + 2] - b0));
+  for (let yy = 1; yy < h - 1; yy++) for (let xx = 1; xx < w - 1; xx++) {
+    const k = yy * w + xx; if (seen[k]) continue;
+    if (!(seen[k - 1] || seen[k + 1] || seen[k - w] || seen[k + w])) continue;
+    const p = k * 4, a = Math.min(1, Math.max(0.05, (dist(p) - tol * 0.5) / (tol * 2.5)));
+    if (a >= 1) continue;
+    px[p] = clamp(r0 + (px[p] - r0) / a, 0, 255); px[p + 1] = clamp(g0 + (px[p + 1] - g0) / a, 0, 255); px[p + 2] = clamp(b0 + (px[p + 2] - b0) / a, 0, 255);
+    px[p + 3] = Math.round(a * 255);
+  }
   x.putImageData(d, 0, 0);
+  return canvasToImageId(c);
+}
+async function canvasToImageId(c) {
   const blob = await new Promise(r => c.toBlob(r, 'image/png')); c.width = c.height = 1;
   const id = uid(); await DB.put('images', { id, blob }); loaded.set(id, await blobToImage(blob)); return id;
+}
+/* recorta um pedaço de uma imagem: separa em camada nova (para mover) ou só apaga */
+async function applyCrop(kind) {
+  const l = selLayer(), c = E.crop; if (!l || !c || !c.a) return;
+  const i = await loadImg(l.imageId); if (!i) return;
+  const iw = i.naturalWidth, ih = i.naturalHeight;
+  const pts = [c.a, { x: c.b.x, y: c.a.y }, { x: c.a.x, y: c.b.y }, c.b].map(p => toLocal(p, l)).map(q => ({ x: (q.x + l.w / 2) * iw / l.w, y: (q.y + l.h / 2) * ih / l.h }));
+  const sx = Math.max(0, Math.floor(Math.min(...pts.map(p => p.x)))), sy = Math.max(0, Math.floor(Math.min(...pts.map(p => p.y))));
+  const ex = Math.min(iw, Math.ceil(Math.max(...pts.map(p => p.x)))), ey = Math.min(ih, Math.ceil(Math.max(...pts.map(p => p.y))));
+  const sw = ex - sx, sh = ey - sy;
+  if (sw < 4 || sh < 4) { toast('Marque o pedaço em cima da imagem selecionada.'); return; }
+  $('#busy').hidden = false;
+  try {
+    pushUndo(true);
+    let piece = null;
+    if (kind === 'split') {
+      const pc = document.createElement('canvas'); pc.width = sw; pc.height = sh; pc.getContext('2d').drawImage(i, -sx, -sy);
+      const pid = await canvasToImageId(pc);
+      const lx = (sx + sw / 2) * l.w / iw - l.w / 2, ly = (sy + sh / 2) * l.h / ih - l.h / 2, a = (l.rot || 0) * Math.PI / 180;
+      piece = { id: uid(), type: 'image', imageId: pid, x: l.x + lx * Math.cos(a) - ly * Math.sin(a), y: l.y + lx * Math.sin(a) + ly * Math.cos(a),
+        w: sw * l.w / iw, h: sh * l.h / ih, rot: l.rot || 0, opacity: l.opacity ?? 1 };
+    }
+    const ec = document.createElement('canvas'); ec.width = iw; ec.height = ih; const ex2 = ec.getContext('2d');
+    ex2.drawImage(i, 0, 0); ex2.clearRect(sx, sy, sw, sh);
+    l.imageId = await canvasToImageId(ec); delete l.srcImageId;
+    const layers = curStory().layers;
+    if (piece) layers.splice(layers.indexOf(l) + 1, 0, piece);
+    E.crop = null; E.sel = piece ? piece.id : l.id; changed(); renderPanel(); renderLayers();
+    toast(piece ? 'Pedaço separado. Agora arraste para onde quiser.' : 'Pedaço apagado');
+  } finally { $('#busy').hidden = true; }
 }
 
 async function generateFiles(tpl, opts) {
