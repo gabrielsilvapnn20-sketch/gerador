@@ -173,7 +173,38 @@ details.more[open] summary::after{content:"▴"}
 .busy{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:55;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1.1rem}
 
 @media (max-width:1100px){ .editor{grid-template-columns:200px minmax(0,1fr)} .editor .side{grid-column:1 / -1} }
+#propPanel.flash{box-shadow:0 0 0 3px var(--accent)}
+.ednav{display:none}
 @media (max-width:720px){
+  body[data-view="editor"] .top{display:none}
+  body[data-view="editor"]::before{background:var(--bg)}
+  body[data-view="editor"] main{padding-block:8px calc(80px + env(safe-area-inset-bottom,0px))}
+  body[data-view="editor"] #v-editor{gap:8px}
+  .ed-head{flex-wrap:nowrap;gap:6px}
+  .ed-head .btn{padding:0 12px}
+  .ed-head .grow{min-width:0}
+  .ed-head .lbl,#edSaved,#edUndo,#edRedo,.stage .hint{display:none}
+  .editor .strip,.editor .toolbar,#propPanel,#layersPanel{display:none}
+  body[data-sheet="stories"] .editor .strip,body[data-sheet="add"] .editor .toolbar,
+  body[data-sheet="edit"] #propPanel,body[data-sheet="layers"] #layersPanel{
+    display:flex;flex-direction:column;position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom,0px));
+    max-height:44vh;max-height:44dvh;overflow-y:auto;z-index:35;background:var(--surface);margin:0;
+    border:0;border-top:1px solid var(--line);border-radius:18px 18px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.22);
+    padding:16px max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px))}
+  body[data-sheet="add"] .editor .toolbar{gap:14px;align-items:stretch}
+  body[data-sheet="add"] .tgroup{align-items:stretch}
+  body[data-sheet="add"] .tgroup .row{display:grid;grid-template-columns:1fr 1fr}
+  .ednav{display:none}
+  body[data-view="editor"] .ednav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:36;background:var(--surface);border-top:1px solid var(--line);
+    padding:6px max(6px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px));gap:4px}
+  .ednav button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;background:none;color:var(--fg);
+    font:600 12px var(--f-body);min-height:52px;border-radius:12px;cursor:pointer;padding:0}
+  .ednav button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
+  .ednav button:disabled{opacity:.4}
+  .ednav .ic{font-size:20px;line-height:1}
+  body[data-view="editor"] #edCanvas{width:min(100%, calc((100vh - 150px) * 9 / 16));width:min(100%, calc((100dvh - 150px - var(--sheet,0px)) * 9 / 16));min-width:0}
+  body[data-sheet="stories"],body[data-sheet="add"],body[data-sheet="edit"],body[data-sheet="layers"]{--sheet:44dvh}
+
   .top .wrap{gap:8px} .tabs{width:100%} .tabs button{flex:1;padding:10px 6px}
   .editor{grid-template-columns:minmax(0,1fr)}
   .strip{order:2} .stage{order:1} .side{order:3}
@@ -215,12 +246,12 @@ details.more[open] summary::after{content:"▴"}
   <!-- EDITOR -->
   <section id="v-editor" class="view" hidden>
     <div class="ed-head">
-      <button class="btn" id="edBack">← Modelos</button>
+      <button class="btn" id="edBack" aria-label="Voltar para Modelos">←<span class="lbl"> Modelos</span></button>
       <div class="grow"><input type="text" id="edName" aria-label="Nome do modelo"></div>
       <span class="saved" id="edSaved"></span>
       <button class="btn sm" id="edUndo" title="Desfazer">↶ Desfazer</button>
       <button class="btn sm" id="edRedo" title="Refazer">↷ Refazer</button>
-      <button class="btn primary" id="edUse">Usar este modelo →</button>
+      <button class="btn primary" id="edUse">Usar<span class="lbl"> este modelo</span> →</button>
     </div>
     <div class="editor">
       <div class="strip">
@@ -240,11 +271,11 @@ details.more[open] summary::after{content:"▴"}
             <button class="btn sm on" id="tgSafe" aria-pressed="true">Áreas seguras</button></div></div>
         </div>
         <canvas id="edCanvas" width="1080" height="1920"></canvas>
-        <p class="small muted" style="text-align:center">Toque numa camada para selecionar. Arraste para mover, ● canto para redimensionar, ↻ para girar.</p>
+        <p class="small muted hint" style="text-align:center">Toque numa camada para selecionar. Arraste para mover, ● canto para redimensionar, ↻ para girar, ✎ para editar.</p>
       </div>
       <div class="side">
         <div class="panel" id="propPanel"></div>
-        <div class="panel">
+        <div class="panel" id="layersPanel">
           <span class="label">Camadas (de cima para baixo)</span>
           <div class="layers" id="layerList"></div>
         </div>
@@ -330,6 +361,13 @@ details.more[open] summary::after{content:"▴"}
   <p id="modalMsg"></p>
   <div class="row"><button class="btn" id="modalNo">Cancelar</button><button class="btn danger solid" id="modalYes">Excluir</button></div>
 </div></div>
+<nav class="ednav" id="edNav" aria-label="Ferramentas do editor">
+  <button data-sheet="stories"><span class="ic">▤</span>Stories</button>
+  <button data-sheet="add"><span class="ic">＋</span>Adicionar</button>
+  <button data-sheet="edit"><span class="ic">✎</span>Editar</button>
+  <button data-sheet="layers"><span class="ic">☰</span>Camadas</button>
+  <button id="navUndo"><span class="ic">↶</span>Desfazer</button>
+</nav>
 <div class="busy" id="busy" hidden>Gerando…</div>
 
 <script>
@@ -575,7 +613,7 @@ function drawSel(ctx, l, o) {
   ctx.beginPath(); ctx.moveTo(0, -h / 2); ctx.lineTo(0, -h / 2 - 34 * hs); ctx.stroke();
   const dot = (x, y, label) => { ctx.fillStyle = '#ff3d8b'; ctx.beginPath(); ctx.arc(x, y, 14 * hs, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#fff'; ctx.font = `700 ${16 * hs}px Figtree, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, x, y + hs); };
-  dot(l.w / 2, h / 2, '⤡'); dot(0, -h / 2 - 34 * hs, '↻');
+  dot(l.w / 2, h / 2, '⤡'); dot(0, -h / 2 - 34 * hs, '↻'); dot(-l.w / 2, -h / 2, '✎');
   if (l.type === 'text') { dot(-l.w / 2, 0, '↔'); dot(l.w / 2, 0, '↔'); }
   ctx.restore();
 }
@@ -629,7 +667,7 @@ function download(blob, name) {
 }
 let current = 'modelos';
 function show(v) {
-  current = v;
+  current = v; document.body.dataset.view = v; if (v !== 'editor') setSheet('');
   for (const s of ['modelos', 'editor', 'gerar', 'historico']) $('#v-' + s).hidden = s !== v;
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-current', String(b.dataset.view === v || (v === 'editor' && b.dataset.view === 'modelos'))));
   if (v === 'modelos') renderTplList();
@@ -716,7 +754,7 @@ function pushUndo(force) {
   const now = Date.now(); if (!force && now - E.lastPush < 700) return; E.lastPush = now;
   E.undo.push(JSON.stringify(E.tpl.stories)); if (E.undo.length > 60) E.undo.shift(); E.redo = []; updUndo();
 }
-function updUndo() { $('#edUndo').disabled = !E.undo.length; $('#edRedo').disabled = !E.redo.length; }
+function updUndo() { $('#navUndo').disabled = !E.undo.length; $('#edUndo').disabled = !E.undo.length; $('#edRedo').disabled = !E.redo.length; }
 function undoRedo(from, to) {
   if (!from.length) return; to.push(JSON.stringify(E.tpl.stories)); E.tpl.stories = JSON.parse(from.pop());
   E.si = Math.min(E.si, E.tpl.stories.length - 1); if (!selLayer()) E.sel = null; E.lastPush = 0; changed(); renderEditor();
@@ -728,17 +766,38 @@ $('#edBack').onclick = async () => { await saveNow(); show('modelos'); };
 $('#edUse').onclick = async () => { await saveNow(); G.tplId = E.tpl.id; G.adj = {}; G.files = null; show('gerar'); };
 
 /* adicionar camadas */
-$('#addText').onclick = () => { pushUndo(true); const l = textLayer(Object.assign({ text: 'Toque para editar', size: 72 }, IG_STYLES[0][1], { color: '#ffffff' })); curStory().layers.push(l); E.sel = l.id; changed(); renderPanel(); renderLayers(); };
+/* celular: gavetas do editor */
+const mqMobile = window.matchMedia('(max-width:720px)');
+function setSheet(k) {
+  document.body.dataset.sheet = k || '';
+  document.querySelectorAll('#edNav [data-sheet]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.sheet === k)));
+  if (current === 'editor') requestAnimationFrame(draw);
+}
+function openEdit() {
+  if (mqMobile.matches) setSheet('edit');
+  else { const pp = $('#propPanel'); pp.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); pp.classList.add('flash'); setTimeout(() => pp.classList.remove('flash'), 700); }
+}
+document.querySelectorAll('#edNav [data-sheet]').forEach(b => b.onclick = () => setSheet(document.body.dataset.sheet === b.dataset.sheet ? '' : b.dataset.sheet));
+$('#navUndo').onclick = () => undoRedo(E.undo, E.redo);
+mqMobile.addEventListener ? mqMobile.addEventListener('change', () => { setSheet(''); draw(); }) : null;
+function afterAdd() { if (mqMobile.matches) setSheet('edit'); }
+function frameDefault() {
+  if (E.tpl.frameDefault) return E.tpl.frameDefault;
+  try { const d = JSON.parse(localStorage.getItem('gs-frame') || 'null'); if (d && d.w) return d; } catch (e) {}
+  return { w: 300, h: 420, radius: 24 };
+}
+$('#addText').onclick = () => { pushUndo(true); const l = textLayer(Object.assign({ text: 'Toque para editar', size: 72 }, IG_STYLES[0][1], { color: '#ffffff' })); curStory().layers.push(l); E.sel = l.id; changed(); renderPanel(); renderLayers(); afterAdd(); };
 $('#addFrame').onclick = () => {
   pushUndo(true); const n = curStory().layers.filter(x => x.type === 'frame').length + 1;
-  const l = { id: uid(), type: 'frame', label: 'Quadro ' + n, x: 540, y: 960, w: 300, h: 420, rot: 0, radius: 24, imageId: null, fit: { ...DEF_FIT }, slot: true, useInfluencer: false };
-  curStory().layers.push(l); E.sel = l.id; changed(); renderPanel(); renderLayers();
+  const fd = frameDefault();
+  const l = { id: uid(), type: 'frame', label: 'Quadro ' + n, x: 540, y: 960, w: fd.w, h: fd.h, rot: 0, radius: fd.radius ?? 24, imageId: null, fit: { ...DEF_FIT }, slot: true, useInfluencer: false };
+  curStory().layers.push(l); E.sel = l.id; changed(); renderPanel(); renderLayers(); afterAdd();
 };
 $('#addLink').onclick = () => {
   const ex = curStory().layers.find(l => l.type === 'link');
   if (ex) { E.sel = ex.id; toast('Este story já tem o lugar do link. Arraste para posicionar.'); }
   else { pushUndo(true); const l = linkLayer(); curStory().layers.push(l); E.sel = l.id; changed(); }
-  renderPanel(); renderLayers(); draw();
+  renderPanel(); renderLayers(); draw(); afterAdd();
 };
 $('#inLayerImg').onchange = async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
@@ -746,7 +805,7 @@ $('#inLayerImg').onchange = async e => {
   const ar = i.naturalWidth / i.naturalHeight, full = Math.abs(ar - 9 / 16) < 0.04; // print de story inteiro ocupa a tela toda
   const w = full ? W : Math.min(800, i.naturalWidth), h = full ? H : w * i.naturalHeight / i.naturalWidth;
   pushUndo(true); const l = { id: uid(), type: 'image', imageId: id, x: 540, y: 960, w, h, rot: 0, opacity: 1 };
-  curStory().layers.push(l); E.sel = l.id; changed(); renderPanel(); renderLayers();
+  curStory().layers.push(l); E.sel = l.id; changed(); renderPanel(); renderLayers(); afterAdd();
 };
 function toggle(btn, key) { E[key] = !E[key]; btn.classList.toggle('on', E[key]); btn.setAttribute('aria-pressed', String(E[key])); draw(); }
 $('#tgRef').onclick = e => toggle(e.currentTarget, 'showRef');
@@ -769,6 +828,7 @@ cv.addEventListener('pointerdown', e => {
     }
   }
   let mode = null, l = selLayer();
+  if (l) { const loc = toLocal(p, l), h0 = layerH(l, v); if (Math.hypot(loc.x + l.w / 2, loc.y + h0 / 2) < 30 * hs) { e.preventDefault(); openEdit(); return; } }
   if (l && !l.locked) {
     const loc = toLocal(p, l), h = layerH(l, v), R = 30 * hs;
     if (Math.hypot(loc.x - l.w / 2, loc.y - h / 2) < R) mode = 'resize';
@@ -858,7 +918,7 @@ function renderLayers() {
     r.innerHTML = `<span class="ico">${ico}</span><span class="nm">${esc(nm)}</span>
       ${l.type === 'image' ? `<button class="lk" title="${l.locked ? 'Destravar' : 'Travar'}" aria-label="${l.locked ? 'Destravar' : 'Travar'} camada">${l.locked ? '🔒' : '🔓'}</button>` : ''}
       <button class="up" title="Subir" aria-label="Subir camada">▲</button><button class="dn" title="Descer" aria-label="Descer camada">▼</button>`;
-    r.querySelector('.nm').onclick = () => { E.sel = l.id; renderPanel(); renderLayers(); draw(); };
+    r.querySelector('.nm').onclick = () => { E.sel = l.id; renderPanel(); renderLayers(); draw(); afterAdd(); };
     r.querySelector('.up').onclick = () => moveLayer(l, 1); r.querySelector('.dn').onclick = () => moveLayer(l, -1);
     const lk = r.querySelector('.lk'); if (lk) lk.onclick = () => { pushUndo(true); l.locked = !l.locked; E.sel = l.id; changed(); renderPanel(); renderLayers(); };
     box.appendChild(r);
@@ -941,7 +1001,8 @@ function renderPanel() {
         <label class="check"><input type="checkbox" id="fSlot" ${l.slot ? 'checked' : ''}> Poder trocar a foto na hora de gerar</label>`)
       + sec('Enquadrar', `<button class="btn sm ${E.fitMode ? 'on' : ''}" id="fFit">${E.fitMode ? '✓ Arraste a foto · toque para sair' : 'Mover a foto dentro do quadro'}</button>
         <label class="field"><span>Zoom da foto</span><input type="range" id="fZoom" min="1" max="4" step="0.01" value="${z}"></label>`)
-      + more('formato', 'Formato e nome', `<label class="field"><span>Nome do quadro (aparece na tela Gerar)</span><input type="text" id="fLabel" value="${esc(l.label || '')}"></label>
+      + more('formato', 'Tamanho padrão, cantos e nome', `<label class="field"><span>Nome do quadro (aparece na tela Gerar)</span><input type="text" id="fLabel" value="${esc(l.label || '')}"></label>
+        <button class="btn sm" id="fDef">Usar este tamanho nos próximos quadros</button>
         <label class="field"><span>Cantos arredondados</span><input type="range" id="fRad" min="0" max="200" step="1" value="${l.radius || 0}"></label>${rot}`)
       + acts;
     const fi = () => img(frameImgId(l, edO()));
@@ -952,6 +1013,8 @@ function renderPanel() {
     $('#fFit').onclick = () => { E.fitMode = !E.fitMode; renderPanel(); };
     bind('fZoom', t => { l.fit ||= { ...DEF_FIT }; l.fit.zoom = +t.value; clampFit(fi(), l, l.fit); });
     bind('fRad', t => l.radius = +t.value);
+    $('#fDef').onclick = () => { const d = { w: Math.round(l.w), h: Math.round(l.h), radius: l.radius || 0 }; E.tpl.frameDefault = d;
+      try { localStorage.setItem('gs-frame', JSON.stringify(d)); } catch (e) {} changed(); toast(`Novos quadros vão nascer com ${d.w} × ${d.h}`); };
   } else if (l.type === 'image' && E.crop) {
     const ok = E.crop.a && Math.abs(E.crop.b.x - E.crop.a.x) > 8 && Math.abs(E.crop.b.y - E.crop.a.y) > 8;
     p.innerHTML = `<div class="ph"><span class="label">Recortar pedaço</span>
